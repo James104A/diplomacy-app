@@ -1,2 +1,3 @@
--- Flyway baseline migration
--- Tables will be added in subsequent stories
+-- V1: Enable required PostgreSQL extensions
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";

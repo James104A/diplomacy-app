@@ -1,3 +1,30 @@
 spring:
   application:
     name: diplomacy-backend
+
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:diplomacy}
+    username: ${DB_USER:diplomacy}
+    password: ${DB_PASSWORD:diplomacy}
+
+  flyway:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:diplomacy}
+    user: ${DB_USER:diplomacy}
+    password: ${DB_PASSWORD:diplomacy}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+server:
+  port: ${SERVER_PORT:8080}

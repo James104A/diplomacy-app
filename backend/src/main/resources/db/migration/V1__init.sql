@@ -1,0 +1,2 @@
+-- Flyway baseline migration
+-- Tables will be added in subsequent stories

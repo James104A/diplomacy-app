@@ -17,6 +17,7 @@ backend/build/
 adjudication/build/
 *.class
 *.jar
+!**/gradle-wrapper.jar
 *.war
 
 # iOS / Xcode

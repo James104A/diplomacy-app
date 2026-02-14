@@ -1,0 +1,12 @@
+aws_region        = "us-east-1"
+environment       = "staging"
+project_name      = "diplomacy"
+db_instance_class = "db.t3.micro"
+db_name           = "diplomacy"
+db_username       = "diplomacy"
+# db_password     = "set via TF_VAR_db_password or -var flag"
+redis_node_type   = "cache.t3.micro"
+ecs_cpu           = 256
+ecs_memory        = 512
+ecs_desired_count = 1
+backend_image_tag = "latest"

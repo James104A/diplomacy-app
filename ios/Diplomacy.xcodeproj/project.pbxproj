@@ -272,6 +272,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Diplomacy/Preview Content\"";
+				DEVELOPMENT_TEAM = QA38BAD9RK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -285,7 +286,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.diplomacy.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jamesfrauen.diplomacy;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -303,6 +304,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Diplomacy/Preview Content\"";
+				DEVELOPMENT_TEAM = QA38BAD9RK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -316,7 +318,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.diplomacy.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jamesfrauen.diplomacy;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -329,20 +331,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A1B2C3D400000080 /* Build configuration list for PBXProject "Diplomacy" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A1B2C3D400000090 /* Debug */,
-				A1B2C3D400000091 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		A1B2C3D400000060 /* Build configuration list for PBXNativeTarget "Diplomacy" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A1B2C3D400000092 /* Debug */,
 				A1B2C3D400000093 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1B2C3D400000080 /* Build configuration list for PBXProject "Diplomacy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1B2C3D400000090 /* Debug */,
+				A1B2C3D400000091 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

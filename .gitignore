@@ -11,7 +11,38 @@
 *.sublime-project
 *.sublime-workspace
 
-# Dependencies (when you add them)
+# Kotlin / Gradle
+.gradle/
+backend/build/
+adjudication/build/
+*.class
+*.jar
+*.war
+
+# iOS / Xcode
+ios/build/
+ios/DerivedData/
+ios/**/*.xcuserdata/
+ios/**/*.xcworkspace/xcuserdata/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+Pods/
+
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/*.tfvars
+!infra/example.tfvars
+
+# Dependencies
 node_modules/
 __pycache__/
 *.py[cod]

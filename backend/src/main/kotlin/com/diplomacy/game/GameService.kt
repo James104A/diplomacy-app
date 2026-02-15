@@ -1,5 +1,6 @@
 package com.diplomacy.game
 
+import com.diplomacy.messaging.MessagingService
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Service
 import org.springframework.transaction.reactive.TransactionalOperator
@@ -17,6 +18,7 @@ class GameService(
     private val gamePlayerRepository: GamePlayerRepository,
     private val gameStateRepository: GameStateRepository,
     private val gameOrderRepository: GameOrderRepository,
+    private val messagingService: MessagingService,
     private val objectMapper: ObjectMapper
 ) {
 
@@ -152,6 +154,13 @@ class GameService(
             Flux.fromIterable(reassignedPlayers)
                 .flatMap { player -> gamePlayerRepository.save(player) }
                 .then(gameStateRepository.save(gameState))
+                .then(
+                    // E5-S1: Auto-create conversations on game start
+                    messagingService.createConversationsForGame(
+                        game.id,
+                        reassignedPlayers.map { it.power to it.playerId }
+                    )
+                )
                 .then(loadGameResponse(saved))
         }
     }

@@ -66,6 +66,28 @@ jobs:
           REDIS_PORT: 6379
         run: ./gradlew test
 
+  adjudication:
+    name: Adjudication Engine (Build & DATC Tests)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build
+        working-directory: adjudication
+        run: ./gradlew build -x test
+
+      - name: Run DATC Tests
+        working-directory: adjudication
+        run: ./gradlew test
+
   ios:
     name: iOS (Build for Simulator)
     runs-on: macos-15

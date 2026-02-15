@@ -1,17 +1,12 @@
 import SwiftUI
 
+// ContentView is retained for backward compatibility with Xcode project references.
+// The app entry point (DiplomacyApp.swift) now uses AppTabView directly.
+
 struct ContentView: View {
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "globe.europe.africa")
-                .imageScale(.large)
-                .font(.system(size: 64))
-                .foregroundStyle(.tint)
-            Text("Diplomacy")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-        }
-        .padding()
+        AppTabView()
+            .environmentObject(AppState())
     }
 }
 

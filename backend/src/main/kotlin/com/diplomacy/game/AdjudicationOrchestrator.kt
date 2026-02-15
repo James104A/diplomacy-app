@@ -1,5 +1,8 @@
 package com.diplomacy.game
 
+import com.diplomacy.notification.GameEvent
+import com.diplomacy.notification.GameEventType
+import com.diplomacy.notification.NotificationService
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -24,6 +27,7 @@ class AdjudicationOrchestrator(
     private val gameOrderRepository: GameOrderRepository,
     private val resolvedPhaseRepository: ResolvedPhaseRepository,
     private val gameService: GameService,
+    private val notificationService: NotificationService,
     private val objectMapper: ObjectMapper
 ) {
     private val log = LoggerFactory.getLogger(AdjudicationOrchestrator::class.java)
@@ -107,13 +111,23 @@ class AdjudicationOrchestrator(
                                 }
                                 .then(gameRepository.save(updatedGame))
                                 .flatMap { saved ->
-                                    // E4-S8: Check game end after fall adjudication
-                                    if (game.currentSeason == "FALL") {
-                                        gameService.checkGameEnd(gameId, supplyCenters)
-                                            .thenReturn(saved)
-                                    } else {
-                                        Mono.just(saved)
-                                    }
+                                    // E6-S2: Notify all players of phase resolution
+                                    val event = GameEvent(
+                                        type = GameEventType.PHASE_RESOLVED,
+                                        gameId = gameId,
+                                        gameName = game.name,
+                                        data = mapOf("phaseLabel" to phaseLabel)
+                                    )
+                                    notificationService.notifyGamePlayers(gameId, event)
+                                        .then(
+                                            // E4-S8: Check game end after fall adjudication
+                                            if (game.currentSeason == "FALL") {
+                                                gameService.checkGameEnd(gameId, supplyCenters)
+                                                    .thenReturn(saved)
+                                            } else {
+                                                Mono.just(saved)
+                                            }
+                                        )
                                 }
                         }
                     }

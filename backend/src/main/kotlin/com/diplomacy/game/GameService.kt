@@ -1,6 +1,9 @@
 package com.diplomacy.game
 
 import com.diplomacy.messaging.MessagingService
+import com.diplomacy.notification.GameEvent
+import com.diplomacy.notification.GameEventType
+import com.diplomacy.notification.NotificationService
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Service
 import org.springframework.transaction.reactive.TransactionalOperator
@@ -19,6 +22,7 @@ class GameService(
     private val gameStateRepository: GameStateRepository,
     private val gameOrderRepository: GameOrderRepository,
     private val messagingService: MessagingService,
+    private val notificationService: NotificationService,
     private val objectMapper: ObjectMapper
 ) {
 
@@ -160,6 +164,22 @@ class GameService(
                         game.id,
                         reassignedPlayers.map { it.power to it.playerId }
                     )
+                )
+                .then(
+                    // E6-S2: Notify all players that game has started
+                    Flux.fromIterable(reassignedPlayers)
+                        .flatMap { player ->
+                            notificationService.sendNotificationToPlayer(
+                                player.playerId,
+                                GameEvent(
+                                    type = GameEventType.GAME_STARTED,
+                                    gameId = game.id,
+                                    gameName = game.name,
+                                    data = mapOf("power" to player.power)
+                                )
+                            )
+                        }
+                        .then()
                 )
                 .then(loadGameResponse(saved))
         }

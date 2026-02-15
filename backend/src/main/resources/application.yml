@@ -34,3 +34,10 @@ app:
     secret: ${JWT_SECRET:change-me-in-production-this-must-be-at-least-256-bits-long-for-hs256}
     access-token-expiration: 900
     refresh-token-expiration: 2592000
+  push:
+    apns:
+      enabled: ${APNS_ENABLED:false}
+      key-id: ${APNS_KEY_ID:}
+      team-id: ${APNS_TEAM_ID:}
+      bundle-id: ${APNS_BUNDLE_ID:com.diplomacy.app}
+      key-path: ${APNS_KEY_PATH:}

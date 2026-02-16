@@ -35,9 +35,19 @@ struct GamesTab: View {
                 CreateGameView()
                     .environmentObject(appState)
             }
-            .sheet(item: $selectedGame) { game in
-                if game.status == "WAITING_FOR_PLAYERS" {
-                    GameLobbyView(gameId: game.gameId)
+            .sheet(item: Binding(
+                get: { selectedGame?.status == "WAITING_FOR_PLAYERS" ? selectedGame : nil },
+                set: { _ in selectedGame = nil }
+            )) { game in
+                GameLobbyView(gameId: game.gameId)
+                    .environmentObject(appState)
+            }
+            .navigationDestination(isPresented: Binding(
+                get: { selectedGame != nil && selectedGame?.status != "WAITING_FOR_PLAYERS" },
+                set: { if !$0 { selectedGame = nil } }
+            )) {
+                if let game = selectedGame {
+                    GameView(gameId: game.gameId)
                         .environmentObject(appState)
                 }
             }

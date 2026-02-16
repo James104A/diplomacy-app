@@ -28,4 +28,13 @@ actor GameService {
     func joinGame(id: UUID) async throws -> GameResponse {
         try await client.post("/games/\(id)/join")
     }
+
+    func getGameState(id: UUID) async throws -> GameStateResponse {
+        try await client.get("/games/\(id)")
+    }
+
+    func submitOrders(gameId: UUID, orders: [OrderDto]) async throws -> OrderSubmissionResponse {
+        let request = SubmitOrdersRequest(orders: orders)
+        return try await client.put("/games/\(gameId)/orders", body: request)
+    }
 }

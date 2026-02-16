@@ -66,6 +66,9 @@ struct GamesTab: View {
             .onChange(of: viewModel.attentionCount) { count in
                 appState.gamesNeedingAttention = count
             }
+            .onChange(of: viewModel.totalUnreadMessages) { count in
+                appState.totalUnreadMessages = count
+            }
         }
     }
 

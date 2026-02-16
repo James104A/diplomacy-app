@@ -4,6 +4,7 @@ import SwiftUI
 class AppState: ObservableObject {
     @Published var isAuthenticated = false
     @Published var gamesNeedingAttention = 0
+    @Published var totalUnreadMessages = 0
     @Published var pendingFriendRequests = 0
 
     // Deep link routing

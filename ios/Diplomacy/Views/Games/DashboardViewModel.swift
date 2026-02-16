@@ -17,6 +17,10 @@ class DashboardViewModel: ObservableObject {
         games.filter { $0.cardState == .needsOrders || $0.cardState == .unreadMessages }.count
     }
 
+    var totalUnreadMessages: Int {
+        games.reduce(0) { $0 + $1.unreadMessageCount }
+    }
+
     func loadGames() async {
         isLoading = games.isEmpty
         errorMessage = nil

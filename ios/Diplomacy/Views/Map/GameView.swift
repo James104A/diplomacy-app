@@ -8,6 +8,7 @@ struct GameView: View {
     @StateObject private var orderViewModel: OrderEntryViewModel
 
     @State private var showOrderReview = false
+    @State private var showMessaging = false
 
     init(gameId: UUID) {
         self.gameId = gameId
@@ -37,6 +38,16 @@ struct GameView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: $showMessaging) {
+            if let game = mapViewModel.gameState?.game {
+                let myPower = game.players.first?.power ?? ""
+                MessagingHubView(
+                    gameId: gameId,
+                    myPower: myPower,
+                    palette: mapViewModel.palette
+                )
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .principal) {
                 if let game = mapViewModel.gameState?.game {
@@ -51,7 +62,15 @@ struct GameView: View {
             }
 
             ToolbarItem(placement: .navigationBarTrailing) {
-                paletteMenu
+                HStack(spacing: Spacing.sm) {
+                    Button {
+                        showMessaging = true
+                    } label: {
+                        Image(systemName: "bubble.left.and.bubble.right")
+                    }
+
+                    paletteMenu
+                }
             }
         }
     }

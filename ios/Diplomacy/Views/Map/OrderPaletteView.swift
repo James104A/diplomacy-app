@@ -25,6 +25,7 @@ struct OrderPaletteView: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(.appSecondary)
                     }
+                    .accessibilityLabel("Cancel order")
                 }
 
                 // Order type buttons
@@ -49,6 +50,9 @@ struct OrderPaletteView: View {
                             )
                         }
                         .foregroundColor(.appPrimary)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("\(orderType.displayName) order")
+                        .accessibilityHint("Double tap to select \(orderType.displayName)")
                     }
                 }
             }

@@ -17,7 +17,10 @@ struct GameView: View {
     }
 
     var body: some View {
-        ZStack {
+        VStack(spacing: 0) {
+            OfflineBanner()
+
+            ZStack {
             if mapViewModel.isLoading {
                 ProgressView("Loading game...")
             } else if let error = mapViewModel.errorMessage {
@@ -36,8 +39,14 @@ struct GameView: View {
             } else {
                 mapContent
             }
+            }
+            .frame(maxHeight: .infinity)
         }
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await mapViewModel.loadGameState()
+            mapViewModel.subscribeToWebSocket()
+        }
         .navigationDestination(isPresented: $showMessaging) {
             if let game = mapViewModel.gameState?.game {
                 let myPower = game.players.first?.power ?? ""
@@ -68,6 +77,7 @@ struct GameView: View {
                     } label: {
                         Image(systemName: "bubble.left.and.bubble.right")
                     }
+                    .accessibilityLabel("Messages")
 
                     paletteMenu
                 }
@@ -79,19 +89,36 @@ struct GameView: View {
         ZStack {
             // Map
             MapView(viewModel: mapViewModel)
-                .onTapGesture { location in
-                    if orderViewModel.isActive {
-                        // Handled by order entry
-                    } else if mapViewModel.showTerritoryInfo {
-                        mapViewModel.dismissSelection()
-                    }
-                }
 
-            // Territory tap targets
+            // Transparent tap overlay — converts screen taps to map coordinates
             GeometryReader { geometry in
-                MapTerritoryTapLayer(viewModel: mapViewModel, mapSize: geometry.size)
-                    .scaleEffect(mapViewModel.scale)
-                    .offset(mapViewModel.offset)
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture { location in
+                        let normalized = screenToMap(location, in: geometry.size)
+                        if let territory = territoryAtPoint(normalized) {
+                            handleTerritoryTap(territory)
+                        } else if mapViewModel.showTerritoryInfo {
+                            mapViewModel.dismissSelection()
+                        }
+                    }
+                    .gesture(
+                        LongPressGesture(minimumDuration: 0.5)
+                            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .local))
+                            .onEnded { value in
+                                switch value {
+                                case .second(true, let drag):
+                                    if let location = drag?.location {
+                                        let normalized = screenToMap(location, in: geometry.size)
+                                        if let territory = territoryAtPoint(normalized) {
+                                            mapViewModel.longPressTerritory(territory)
+                                        }
+                                    }
+                                default:
+                                    break
+                                }
+                            }
+                    )
             }
 
             // Order arrows overlay
@@ -182,5 +209,48 @@ struct GameView: View {
         } label: {
             Image(systemName: "paintpalette")
         }
+        .accessibilityLabel("Color palette")
+    }
+
+    // MARK: - Coordinate Conversion
+
+    /// Convert a screen tap location to normalized 0-1 map coordinates,
+    /// accounting for current zoom (scale) and pan (offset).
+    private func screenToMap(_ screenPoint: CGPoint, in viewSize: CGSize) -> CGPoint {
+        // Reverse the offset and scale transforms applied to the map canvas
+        let x = (screenPoint.x - viewSize.width / 2 - mapViewModel.offset.width) / mapViewModel.scale + viewSize.width / 2
+        let y = (screenPoint.y - viewSize.height / 2 - mapViewModel.offset.height) / mapViewModel.scale + viewSize.height / 2
+        // Normalize to 0-1 range
+        return CGPoint(x: x / viewSize.width, y: y / viewSize.height)
+    }
+
+    // MARK: - Territory Tap Handling
+
+    private func handleTerritoryTap(_ territory: Territory) {
+        if orderViewModel.isActive, orderViewModel.selectedOrderType != nil {
+            // We're choosing a destination — only allow valid ones
+            let valid = orderViewModel.validDestinations(units: mapViewModel.gameState?.units ?? [])
+            guard valid.contains(territory.id) else { return }
+            orderViewModel.selectDestination(territory.id)
+        } else if orderViewModel.isActive {
+            // Unit selected but no order type yet — tapping elsewhere cancels
+            orderViewModel.cancelOrder()
+            mapViewModel.selectTerritory(territory)
+        } else if let unit = mapViewModel.unitOn(territory.id), isMyUnit(unit) {
+            // Tapped one of our own units — start order entry
+            orderViewModel.selectUnit(unit)
+            mapViewModel.selectTerritory(territory)
+        } else {
+            // Tapped a territory with no friendly unit — show info
+            mapViewModel.selectTerritory(territory)
+        }
+    }
+
+    private func isMyUnit(_ unit: UnitDto) -> Bool {
+        guard let game = mapViewModel.gameState?.game else { return false }
+        // In the dashboard, the game summary tells us our power.
+        // From GameStateResponse, the first player is typically "us" (the requesting player).
+        let myPower = game.players.first?.power
+        return unit.power == myPower
     }
 }

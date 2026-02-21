@@ -110,6 +110,18 @@ struct Territory: Identifiable {
     let homeCenter: Power?
     let center: CGPoint // Normalized map position (0-1 range)
     let parentTerritory: String?
+    let polygon: [CGPoint]? // Boundary vertices in normalized 0-1 coordinates
+
+    init(id: String, name: String, type: TerritoryType, isSupplyCenter: Bool, homeCenter: Power?, center: CGPoint, parentTerritory: String?, polygon: [CGPoint]? = nil) {
+        self.id = id
+        self.name = name
+        self.type = type
+        self.isSupplyCenter = isSupplyCenter
+        self.homeCenter = homeCenter
+        self.center = center
+        self.parentTerritory = parentTerritory
+        self.polygon = polygon
+    }
 
     var isLand: Bool { type == .land || type == .coast }
     var isSea: Bool { type == .sea }

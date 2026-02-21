@@ -6,6 +6,7 @@ actor AuthService {
     private let client = APIClient.shared
 
     func register(email: String, password: String, displayName: String) async throws -> AuthResponse {
+        if PreviewMode.isEnabled { return MockData.authResponse }
         let request = RegisterRequest(
             provider: "email",
             email: email,
@@ -19,6 +20,7 @@ actor AuthService {
     }
 
     func login(email: String, password: String) async throws -> AuthResponse {
+        if PreviewMode.isEnabled { return MockData.authResponse }
         let request = LoginRequest(email: email, password: password)
         let response: AuthResponse = try await client.post("/auth/login", body: request)
         storeTokens(response)
@@ -26,6 +28,7 @@ actor AuthService {
     }
 
     func loginWithApple(idToken: String, displayName: String?) async throws -> AuthResponse {
+        if PreviewMode.isEnabled { return MockData.authResponse }
         let request = AppleLoginRequest(idToken: idToken, displayName: displayName)
         let response: AuthResponse = try await client.post("/auth/login/apple", body: request)
         storeTokens(response)
@@ -37,7 +40,8 @@ actor AuthService {
     }
 
     func hasStoredTokens() -> Bool {
-        KeychainManager.load(key: .accessToken) != nil
+        if PreviewMode.isEnabled { return true }
+        return KeychainManager.load(key: .accessToken) != nil
     }
 
     private func storeTokens(_ response: AuthResponse) {

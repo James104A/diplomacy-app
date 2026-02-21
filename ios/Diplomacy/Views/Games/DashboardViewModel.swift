@@ -26,10 +26,14 @@ class DashboardViewModel: ObservableObject {
         errorMessage = nil
 
         do {
-            games = try await GameService.shared.getMyGames()
+            let result = try await GameService.shared.getMyGames()
+            print("[Dashboard] Loaded \(result.count) games (preview=\(PreviewMode.isEnabled))")
+            games = result
         } catch let error as NetworkError {
+            print("[Dashboard] NetworkError: \(error.errorDescription ?? "unknown")")
             errorMessage = error.errorDescription
         } catch {
+            print("[Dashboard] Error: \(error)")
             errorMessage = "Failed to load games."
         }
 

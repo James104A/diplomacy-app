@@ -10,16 +10,21 @@ struct GamesTab: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if viewModel.isLoading {
-                    SkeletonDashboard()
-                } else if let error = viewModel.errorMessage, viewModel.games.isEmpty {
-                    errorView(error)
-                } else if viewModel.games.isEmpty {
-                    emptyView
-                } else {
-                    gamesList
+            VStack(spacing: 0) {
+                OfflineBanner()
+
+                Group {
+                    if viewModel.isLoading {
+                        SkeletonDashboard()
+                    } else if let error = viewModel.errorMessage, viewModel.games.isEmpty {
+                        errorView(error)
+                    } else if viewModel.games.isEmpty {
+                        emptyView
+                    } else {
+                        gamesList
+                    }
                 }
+                .frame(maxHeight: .infinity)
             }
             .navigationTitle("Games")
             .toolbar {
@@ -102,7 +107,7 @@ struct GamesTab: View {
 
     private var emptyView: some View {
         VStack(spacing: Spacing.md) {
-            Image(systemName: "swords")
+            Image(systemName: "flag.fill")
                 .font(.system(size: 48))
                 .foregroundColor(.appSecondary.opacity(0.5))
             Text("No Games Yet")

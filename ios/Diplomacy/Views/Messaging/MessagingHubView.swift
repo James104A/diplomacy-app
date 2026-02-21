@@ -9,7 +9,6 @@ struct MessagingHubView: View {
     @State private var conversations: [ConversationSummary] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
-    @State private var selectedConversation: ConversationSummary?
     @State private var cancellable: AnyCancellable?
 
     var body: some View {
@@ -31,14 +30,6 @@ struct MessagingHubView: View {
         }
         .navigationTitle("Messages")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(item: $selectedConversation) { conversation in
-            ConversationView(
-                conversationId: conversation.id,
-                title: conversation.displayName,
-                myPower: myPower,
-                palette: palette
-            )
-        }
         .task {
             await loadConversations()
             subscribeToUpdates()
@@ -51,8 +42,13 @@ struct MessagingHubView: View {
     private var conversationList: some View {
         List {
             ForEach(sortedConversations) { conversation in
-                Button {
-                    selectedConversation = conversation
+                NavigationLink {
+                    ConversationView(
+                        conversationId: conversation.id,
+                        title: conversation.displayName,
+                        myPower: myPower,
+                        palette: palette
+                    )
                 } label: {
                     ConversationRow(conversation: conversation, palette: palette)
                 }
@@ -151,6 +147,23 @@ struct ConversationRow: View {
             }
         }
         .padding(.vertical, Spacing.xxs)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(conversationAccessibilityLabel)
+        .accessibilityHint("Double tap to open conversation")
+    }
+
+    private var conversationAccessibilityLabel: String {
+        var parts = [conversation.displayName]
+        if conversation.unreadCount > 0 {
+            parts.append("\(conversation.unreadCount) unread")
+        }
+        if let lastMessage = conversation.lastMessage {
+            parts.append(lastMessage.preview)
+            parts.append(relativeTime(lastMessage.timestamp))
+        } else {
+            parts.append("no messages yet")
+        }
+        return parts.joined(separator: ", ")
     }
 
     @ViewBuilder

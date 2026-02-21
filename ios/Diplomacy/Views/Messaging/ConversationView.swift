@@ -22,6 +22,8 @@ struct ConversationView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            OfflineBanner()
+
             // Messages
             messagesList
 
@@ -78,8 +80,17 @@ struct ConversationView: View {
 
                     // Pending messages
                     ForEach(viewModel.pendingMessages) { pending in
-                        PendingMessageBubble(text: pending.content)
-                            .id(pending.id)
+                        PendingMessageBubble(
+                            text: pending.content,
+                            failed: pending.failed,
+                            onRetry: {
+                                Task { await viewModel.retryMessage(pending) }
+                            },
+                            onDelete: {
+                                viewModel.removePendingMessage(pending)
+                            }
+                        )
+                        .id(pending.id)
                     }
                 }
                 .padding(.horizontal, Spacing.sm)
@@ -124,6 +135,7 @@ class ConversationViewModel: ObservableObject {
         let id = UUID()
         let content: String
         let sentAt = Date()
+        var failed = false
     }
 
     var lastMessageId: UUID? {
@@ -211,7 +223,10 @@ class ConversationViewModel: ObservableObject {
             messages.append(message)
             scrollToBottom = UUID()
         } catch {
-            // Keep pending with error state — could add retry later
+            // Mark as failed so user can retry
+            if let index = pendingMessages.firstIndex(where: { $0.id == pending.id }) {
+                pendingMessages[index].failed = true
+            }
         }
         isSending = false
     }
@@ -222,6 +237,35 @@ class ConversationViewModel: ObservableObject {
             conversationId: conversationId,
             lastMessageId: lastId
         )
+    }
+
+    func retryMessage(_ pending: PendingMessage) async {
+        guard pending.failed else { return }
+
+        // Reset failed state
+        if let index = pendingMessages.firstIndex(where: { $0.id == pending.id }) {
+            pendingMessages[index].failed = false
+        }
+
+        isSending = true
+        do {
+            let message = try await MessagingService.shared.sendMessage(
+                conversationId: conversationId,
+                content: pending.content
+            )
+            pendingMessages.removeAll { $0.id == pending.id }
+            messages.append(message)
+            scrollToBottom = UUID()
+        } catch {
+            if let index = pendingMessages.firstIndex(where: { $0.id == pending.id }) {
+                pendingMessages[index].failed = true
+            }
+        }
+        isSending = false
+    }
+
+    func removePendingMessage(_ pending: PendingMessage) {
+        pendingMessages.removeAll { $0.id == pending.id }
     }
 
     func subscribeToWebSocket() {
@@ -314,6 +358,13 @@ struct MessageBubble: View {
 
             if !isMe { Spacer(minLength: 60) }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(bubbleAccessibilityLabel)
+    }
+
+    private var bubbleAccessibilityLabel: String {
+        let sender = isMe ? "You" : (message.senderPowerEnum?.displayName ?? message.senderPower)
+        return "\(sender): \(message.content), \(relativeTime)"
     }
 
     private var relativeTime: String {
@@ -336,6 +387,9 @@ struct MessageBubble: View {
 
 struct PendingMessageBubble: View {
     let text: String
+    let failed: Bool
+    var onRetry: (() -> Void)?
+    var onDelete: (() -> Void)?
 
     var body: some View {
         HStack {
@@ -344,23 +398,46 @@ struct PendingMessageBubble: View {
             VStack(alignment: .trailing, spacing: 2) {
                 Text(text)
                     .font(.appSecondary)
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(.white.opacity(failed ? 0.6 : 0.8))
                     .padding(.horizontal, Spacing.sm)
                     .padding(.vertical, Spacing.xs)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.appPrimary.opacity(0.6))
+                            .fill(failed ? Color.appError.opacity(0.6) : Color.appPrimary.opacity(0.6))
                     )
 
-                HStack(spacing: 2) {
-                    Image(systemName: "clock")
-                        .font(.system(size: 9))
-                    Text("Sending...")
+                if failed {
+                    HStack(spacing: Spacing.xs) {
+                        Image(systemName: "exclamationmark.circle")
+                            .font(.system(size: 9))
+                            .foregroundColor(.appError)
+                        Text("Failed")
+                            .font(.system(size: 10))
+                            .foregroundColor(.appError)
+                        Button("Retry") {
+                            onRetry?()
+                        }
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.appPrimary)
+                        Button("Delete") {
+                            onDelete?()
+                        }
                         .font(.system(size: 10))
+                        .foregroundColor(.appSecondary)
+                    }
+                } else {
+                    HStack(spacing: 2) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 9))
+                        Text("Sending...")
+                            .font(.system(size: 10))
+                    }
+                    .foregroundColor(.appSecondary.opacity(0.5))
                 }
-                .foregroundColor(.appSecondary.opacity(0.5))
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(failed ? "Failed to send: \(text). Double tap to retry." : "Sending: \(text)")
     }
 }
 
@@ -397,6 +474,7 @@ struct MessageComposerView: View {
                     .foregroundColor(canSend ? .appPrimary : .appSecondary.opacity(0.3))
             }
             .disabled(!canSend)
+            .accessibilityLabel("Send message")
         }
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, Spacing.xs)

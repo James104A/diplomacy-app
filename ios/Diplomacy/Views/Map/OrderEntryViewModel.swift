@@ -213,6 +213,13 @@ class OrderEntryViewModel: ObservableObject {
 
     func submitOrders() async {
         guard !isSubmitting else { return }
+
+        // Check connectivity before submitting
+        if !NetworkMonitor.shared.isConnected {
+            submissionError = "You're offline. Your orders are saved locally and will be ready to submit when you reconnect."
+            return
+        }
+
         isSubmitting = true
         submissionError = nil
 
@@ -223,7 +230,7 @@ class OrderEntryViewModel: ObservableObject {
         } catch let error as NetworkError {
             submissionError = error.errorDescription
         } catch {
-            submissionError = "Failed to submit orders."
+            submissionError = "Failed to submit orders. Please try again."
         }
 
         isSubmitting = false

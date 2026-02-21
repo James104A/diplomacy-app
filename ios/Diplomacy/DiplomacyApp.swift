@@ -6,6 +6,13 @@ struct DiplomacyApp: App {
     @State private var showJoinSheet = false
     @State private var pendingInviteCode: String?
 
+    init() {
+        #if DEBUG
+        PreviewMode.isEnabled = true
+        print("[App] PreviewMode enabled: \(PreviewMode.isEnabled)")
+        #endif
+    }
+
     var body: some Scene {
         WindowGroup {
             Group {
@@ -26,6 +33,12 @@ struct DiplomacyApp: App {
             }
             .environmentObject(appState)
             .task {
+                print("[App] .task fired, preview=\(PreviewMode.isEnabled), auth=\(appState.isAuthenticated)")
+                if PreviewMode.isEnabled {
+                    appState.isAuthenticated = true
+                    print("[App] Set isAuthenticated = true")
+                    return
+                }
                 // Check for existing tokens on launch
                 let hasTokens = await AuthService.shared.hasStoredTokens()
                 if hasTokens {
@@ -33,6 +46,7 @@ struct DiplomacyApp: App {
                 }
             }
             .onChange(of: appState.isAuthenticated) { isAuth in
+                guard !PreviewMode.isEnabled else { return }
                 if isAuth {
                     WebSocketManager.shared.connect()
                 } else {

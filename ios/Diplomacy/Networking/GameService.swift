@@ -6,34 +6,42 @@ actor GameService {
     private let client = APIClient.shared
 
     func getMyGames() async throws -> [GameSummary] {
-        try await client.get("/players/me/games")
+        if PreviewMode.isEnabled { return MockData.gameSummaries }
+        return try await client.get("/players/me/games")
     }
 
     func createGame(_ request: CreateGameRequest) async throws -> GameResponse {
-        try await client.post("/games", body: request)
+        if PreviewMode.isEnabled { return MockData.gameState.game }
+        return try await client.post("/games", body: request)
     }
 
     func getGame(id: UUID) async throws -> GameResponse {
-        try await client.get("/games/\(id)")
+        if PreviewMode.isEnabled { return MockData.gameState.game }
+        return try await client.get("/games/\(id)")
     }
 
     func getGameByInviteCode(_ inviteCode: String) async throws -> GameResponse {
-        try await client.get("/games/invite/\(inviteCode)")
+        if PreviewMode.isEnabled { return MockData.gameState.game }
+        return try await client.get("/games/invite/\(inviteCode)")
     }
 
     func joinGame(inviteCode: String) async throws -> GameResponse {
-        try await client.post("/games/join/\(inviteCode)")
+        if PreviewMode.isEnabled { return MockData.gameState.game }
+        return try await client.post("/games/join/\(inviteCode)")
     }
 
     func joinGame(id: UUID) async throws -> GameResponse {
-        try await client.post("/games/\(id)/join")
+        if PreviewMode.isEnabled { return MockData.gameState.game }
+        return try await client.post("/games/\(id)/join")
     }
 
     func getGameState(id: UUID) async throws -> GameStateResponse {
-        try await client.get("/games/\(id)")
+        if PreviewMode.isEnabled { return MockData.gameState }
+        return try await client.get("/games/\(id)")
     }
 
     func submitOrders(gameId: UUID, orders: [OrderDto]) async throws -> OrderSubmissionResponse {
+        if PreviewMode.isEnabled { return MockData.orderSubmissionResponse }
         let request = SubmitOrdersRequest(orders: orders)
         return try await client.put("/games/\(gameId)/orders", body: request)
     }

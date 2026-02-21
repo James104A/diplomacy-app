@@ -12,6 +12,7 @@ struct BadgeView: View {
                 .padding(.vertical, 2)
                 .background(Color.appError)
                 .clipShape(Capsule())
+                .accessibilityLabel("\(count) unread")
         }
     }
 }

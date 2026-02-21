@@ -18,6 +18,7 @@ class WebSocketManager: ObservableObject {
     static let shared = WebSocketManager()
 
     @Published var isConnected = false
+    @Published var isReconnecting = false
 
     private var webSocketTask: URLSessionWebSocketTask?
     private var session: URLSession
@@ -63,6 +64,7 @@ class WebSocketManager: ObservableObject {
         webSocketTask?.resume()
 
         isConnected = true
+        isReconnecting = false
         retryCount = 0
         startHeartbeat()
         receiveMessage()
@@ -175,6 +177,7 @@ class WebSocketManager: ObservableObject {
         let delay = min(pow(2.0, Double(retryCount)), Self.maxRetryDelay)
         retryCount += 1
 
+        isReconnecting = true
         print("[WS] Reconnecting in \(delay)s (attempt \(retryCount))")
 
         Task {

@@ -90,6 +90,23 @@ struct TerritoryInfoOverlay: View {
         .cornerRadius(Spacing.sm)
         .padding(.horizontal, Spacing.md)
         .padding(.bottom, Spacing.md)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(territoryAccessibilityLabel)
+    }
+
+    private var territoryAccessibilityLabel: String {
+        var parts = [territory.name]
+        parts.append(territory.type.rawValue)
+        if territory.isSupplyCenter {
+            parts.append("supply center")
+        }
+        if let owner {
+            parts.append("controlled by \(owner.displayName)")
+        }
+        if let unit {
+            parts.append("\(unit.powerEnum?.displayName ?? unit.power) \(unit.isArmy ? "army" : "fleet")")
+        }
+        return parts.joined(separator: ", ")
     }
 }
 

@@ -28,17 +28,31 @@ enum NetworkError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .noAccessToken: return "Not authenticated"
-        case .unauthorized: return "Session expired"
-        case .forbidden: return "Access denied"
-        case .notFound: return "Not found"
-        case .conflict: return "Conflict"
-        case .unprocessable(let detail): return detail?.message ?? "Invalid request"
-        case .rateLimited: return "Too many requests. Please wait."
-        case .serverError: return "Server error. Please try again."
-        case .decodingError: return "Unexpected response format"
-        case .networkError(let err): return err.localizedDescription
+        case .noAccessToken: return "Please sign in to continue."
+        case .unauthorized: return "Your session has expired. Please sign in again."
+        case .forbidden: return "You don't have permission to do that."
+        case .notFound: return "The requested content could not be found."
+        case .conflict: return "This action conflicts with a recent change. Please refresh and try again."
+        case .unprocessable(let detail): return detail?.message ?? "The request couldn't be processed. Please check your input."
+        case .rateLimited: return "You're doing that too fast. Please wait a moment and try again."
+        case .serverError: return "Something went wrong on our end. Please try again in a moment."
+        case .decodingError: return "We received an unexpected response. Please try again."
+        case .networkError(let err):
+            if (err as NSError).code == NSURLErrorNotConnectedToInternet {
+                return "No internet connection. Please check your network and try again."
+            }
+            if (err as NSError).code == NSURLErrorTimedOut {
+                return "The request timed out. Please check your connection and try again."
+            }
+            return "A network error occurred. Please check your connection and try again."
         case .invalidURL: return "Invalid URL"
+        }
+    }
+
+    var isRetryable: Bool {
+        switch self {
+        case .serverError, .rateLimited, .networkError: return true
+        default: return false
         }
     }
 }

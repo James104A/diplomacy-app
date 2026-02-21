@@ -17,7 +17,7 @@ enum AppTab: String, CaseIterable {
 
     var iconName: String {
         switch self {
-        case .games: return "swords"
+        case .games: return "flag.fill"
         case .social: return "person.2"
         case .learn: return "graduationcap"
         case .profile: return "person.circle"

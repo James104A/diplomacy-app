@@ -128,6 +128,25 @@ struct OrderReviewView: View {
             }
         }
         .opacity(viewModel.isSubmitted ? 0.7 : 1.0)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(orderAccessibilityLabel(order))
+    }
+
+    private func orderAccessibilityLabel(_ order: OrderDto) -> String {
+        var label = viewModel.orderDescription(order)
+        if viewModel.isSubmitted {
+            label += ", submitted"
+        }
+        if let result = validationResult(for: order) {
+            if let error = result.error {
+                label += ", invalid: \(error)"
+            } else if let warning = result.warning {
+                label += ", warning: \(warning)"
+            } else if result.status == "VALID" {
+                label += ", valid"
+            }
+        }
+        return label
     }
 
     private func orderIcon(for order: OrderDto) -> some View {

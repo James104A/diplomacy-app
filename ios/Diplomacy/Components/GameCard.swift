@@ -87,6 +87,43 @@ struct GameCard: View {
         .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
         .opacity(isEliminated ? 0.5 : 1.0)
         .overlay(eliminatedOverlay)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityDescription)
+        .accessibilityHint("Double tap to open game")
+    }
+
+    private var accessibilityDescription: String {
+        var parts = [gameName, "playing as \(power.displayName)", phaseLabel]
+        if isEliminated {
+            parts.append("eliminated")
+        } else {
+            if !ordersSubmitted && deadline != nil {
+                parts.append("orders needed")
+            } else if ordersSubmitted {
+                parts.append("orders submitted")
+            }
+            if unreadCount > 0 {
+                parts.append("\(unreadCount) unread message\(unreadCount == 1 ? "" : "s")")
+            }
+            parts.append("\(supplyCenterCount) supply center\(supplyCenterCount == 1 ? "" : "s")")
+            let diff = supplyCenterCount - prevSupplyCenterCount
+            if diff > 0 {
+                parts.append("up \(diff)")
+            } else if diff < 0 {
+                parts.append("down \(abs(diff))")
+            }
+            if let deadline = deadline {
+                let remaining = max(0, deadline.timeIntervalSinceNow)
+                let hours = Int(remaining) / 3600
+                let minutes = (Int(remaining) % 3600) / 60
+                if hours > 24 {
+                    parts.append("\(hours / 24) days \(hours % 24) hours remaining")
+                } else {
+                    parts.append("\(hours) hours \(minutes) minutes remaining")
+                }
+            }
+        }
+        return parts.joined(separator: ", ")
     }
 
     private var accentColor: Color {
@@ -155,12 +192,38 @@ struct DeadlineTimerView: View {
     let deadline: Date
 
     @State private var timeRemaining: TimeInterval = 0
+    @State private var timer: Timer?
 
     var body: some View {
         Text(formattedTime)
             .font(.appSecondaryBold)
             .foregroundColor(urgencyColor)
-            .onAppear { updateTime() }
+            .onAppear { startTimer() }
+            .onDisappear { stopTimer() }
+            .accessibilityLabel(accessibilityTimeLabel)
+    }
+
+    private var accessibilityTimeLabel: String {
+        let hours = Int(timeRemaining) / 3600
+        let minutes = (Int(timeRemaining) % 3600) / 60
+        if hours > 24 {
+            return "\(hours / 24) days \(hours % 24) hours remaining"
+        }
+        return "\(hours) hours \(minutes) minutes remaining"
+    }
+
+    private func startTimer() {
+        updateTime()
+        // Update every minute for deadlines >2h away, every second when urgent
+        let interval: TimeInterval = timeRemaining > 7200 ? 60 : 1
+        timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
+            updateTime()
+        }
+    }
+
+    private func stopTimer() {
+        timer?.invalidate()
+        timer = nil
     }
 
     private func updateTime() {

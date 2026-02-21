@@ -4,10 +4,8 @@ struct MapView: View {
     @ObservedObject var viewModel: MapViewModel
     var debugMode: Bool = false
 
-    // Callbacks for tap events — GameView handles game logic
-    var onTap: ((CGPoint) -> Void)?       // normalized 0-1 map coords
-    var onDoubleTap: (() -> Void)?
-    var onLongPress: ((CGPoint) -> Void)?  // normalized 0-1 map coords
+    var onTap: ((CGPoint) -> Void)?
+    var onLongPress: ((CGPoint) -> Void)?
 
     @GestureState private var gestureScale: CGFloat = 1.0
     @GestureState private var gestureDrag: CGSize = .zero
@@ -18,7 +16,7 @@ struct MapView: View {
 
             ZStack {
                 mapLayers(mapSize: mapSize)
-                    .scaleEffect(viewModel.scale * gestureScale)
+                    .scaleEffect(viewModel.scale * gestureScale, anchor: .topLeading)
                     .offset(
                         x: viewModel.offset.width + gestureDrag.width,
                         y: viewModel.offset.height + gestureDrag.height
@@ -26,14 +24,15 @@ struct MapView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture(count: 2) {
-                onDoubleTap?()
+                viewModel.handleDoubleTap(in: viewModel.screenSize)
             }
-            .onTapGesture(count: 1) { location in
+            .onTapGesture { location in
                 let normalized = screenToMap(location, in: mapSize)
                 onTap?(normalized)
             }
             .gesture(longPressGesture(in: mapSize))
-            .simultaneousGesture(pinchAndDragGesture)
+            .simultaneousGesture(pinchGesture)
+            .simultaneousGesture(panGesture)
             .onAppear {
                 viewModel.screenSize = geometry.size
                 viewModel.trySetInitialPosition()
@@ -48,14 +47,10 @@ struct MapView: View {
 
     // MARK: - Map Layers
 
-    /// Aspect ratio derived from the actual DiplomacyMap image asset at runtime.
     static let mapAspect: CGFloat = {
         if let uiImage = UIImage(named: "DiplomacyMap") {
-            let aspect = uiImage.size.width / uiImage.size.height
-            print("✅ DiplomacyMap actual size: \(uiImage.size), aspect: \(aspect)")
-            return aspect
+            return uiImage.size.width / uiImage.size.height
         }
-        print("⚠️ DiplomacyMap image not found, falling back to hardcoded aspect ratio")
         return 1835.0 / 1360.0
     }()
 
@@ -85,20 +80,30 @@ struct MapView: View {
 
     // MARK: - Coordinate Conversion
 
-    /// Convert a screen tap to normalized 0-1 map coordinates.
-    /// Uses the SAME GeometryReader size as the rendering, so coordinates always match.
+    /// Convert a screen tap point to normalized [0..1] map coordinates.
+    ///
+    /// The map is rendered at top-left (0,0) of the GeometryReader, then
+    /// transformed by .scaleEffect(anchor: .topLeading) + .offset.
+    /// To invert: subtract offset first, then divide by scale.
     private func screenToMap(_ screenPoint: CGPoint, in viewSize: CGSize) -> CGPoint {
-        guard viewSize.width > 0, viewSize.height > 0 else { return .zero }
         let mapHeight = viewSize.width / Self.mapAspect
-        let x = (screenPoint.x - viewSize.width / 2 - viewModel.offset.width) / viewModel.scale + viewSize.width / 2
-        let y = (screenPoint.y - viewSize.height / 2 - viewModel.offset.height) / viewModel.scale + mapHeight / 2
-        return CGPoint(x: x / viewSize.width, y: y / mapHeight)
+        let currentScale = viewModel.scale * gestureScale
+        let currentOffset = CGSize(
+            width: viewModel.offset.width + gestureDrag.width,
+            height: viewModel.offset.height + gestureDrag.height
+        )
+
+        // Invert the transform: point_in_map = (screen_point - offset) / scale
+        let mapX = (screenPoint.x - currentOffset.width) / currentScale
+        let mapY = (screenPoint.y - currentOffset.height) / currentScale
+
+        // Normalize to [0..1]
+        return CGPoint(x: mapX / viewSize.width, y: mapY / mapHeight)
     }
 
     // MARK: - Gestures
 
-    /// Combined pinch + drag gesture for zoom and pan.
-    private var pinchAndDragGesture: some Gesture {
+    private var pinchGesture: some Gesture {
         MagnificationGesture()
             .updating($gestureScale) { value, state, _ in
                 state = value
@@ -112,24 +117,24 @@ struct MapView: View {
                     )
                 }
             }
-            .simultaneously(with:
-                DragGesture()
-                    .updating($gestureDrag) { value, state, _ in
-                        state = value.translation
-                    }
-                    .onEnded { value in
-                        let proposed = CGSize(
-                            width: viewModel.offset.width + value.translation.width,
-                            height: viewModel.offset.height + value.translation.height
-                        )
-                        viewModel.offset = viewModel.clampOffset(
-                            proposed, scale: viewModel.scale, screenSize: viewModel.screenSize
-                        )
-                    }
-            )
     }
 
-    /// Long-press gesture to show adjacencies.
+    private var panGesture: some Gesture {
+        DragGesture()
+            .updating($gestureDrag) { value, state, _ in
+                state = value.translation
+            }
+            .onEnded { value in
+                let proposed = CGSize(
+                    width: viewModel.offset.width + value.translation.width,
+                    height: viewModel.offset.height + value.translation.height
+                )
+                viewModel.offset = viewModel.clampOffset(
+                    proposed, scale: viewModel.scale, screenSize: viewModel.screenSize
+                )
+            }
+    }
+
     private func longPressGesture(in viewSize: CGSize) -> some Gesture {
         LongPressGesture(minimumDuration: 0.5)
             .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .local))
@@ -182,13 +187,12 @@ struct MapView: View {
     }
 
     private func interactiveOverlay(width w: CGFloat, height h: CGFloat) -> some View {
-        let currentScale = viewModel.scale
-        let unitRadius = (11.0 / currentScale).clamped(to: 6...18)
-        let fontSize = (12.0 / currentScale).clamped(to: 7...16)
-        let strokeWidth = (1.5 / currentScale).clamped(to: 0.5...2.5)
-        let bgStrokeWidth = (3.0 / currentScale).clamped(to: 1.0...4.0)
-        let scSize = (6.0 / currentScale).clamped(to: 3...10)
-        let scOffset = (12.0 / currentScale).clamped(to: 6...18)
+        let unitRadius: CGFloat = 11
+        let fontSize: CGFloat = 12
+        let strokeWidth: CGFloat = 1.5
+        let bgStrokeWidth: CGFloat = 3.0
+        let scSize: CGFloat = 6
+        let scOffset: CGFloat = 12
 
         return Canvas { context, size in
             let renderables = TerritoryData.all.filter { $0.parentTerritory == nil }
@@ -224,11 +228,7 @@ struct MapView: View {
                 let unitText = Text(unit.isArmy ? "A" : "F")
                     .font(.system(size: fontSize, weight: .black))
                     .foregroundColor(.white)
-                context.draw(
-                    context.resolve(unitText),
-                    at: unitCenter,
-                    anchor: .center
-                )
+                context.draw(context.resolve(unitText), at: unitCenter, anchor: .center)
             }
         }
         .frame(width: w, height: h)
@@ -236,24 +236,23 @@ struct MapView: View {
     }
 
     private func labelOverlay(width w: CGFloat, height h: CGFloat) -> some View {
-        let currentScale = viewModel.scale
-        let labelFontSize = (10.0 / currentScale).clamped(to: 5...12)
+        let labelFontSize: CGFloat = 10
 
         return Canvas { context, size in
             let renderables = TerritoryData.all.filter { $0.parentTerritory == nil }
 
             for territory in renderables {
                 let center = CGPoint(x: territory.labelAnchor.x * w, y: territory.labelAnchor.y * h)
-                let labelY = center.y - (16.0 / currentScale).clamped(to: 8...20)
+                let labelY = center.y - 16
+                let labelPoint = CGPoint(x: center.x, y: labelY)
 
-                let label = Text(territory.abbreviation)
-                    .font(.system(size: labelFontSize, weight: .bold))
-                    .foregroundColor(.white)
                 let shadow = Text(territory.abbreviation)
                     .font(.system(size: labelFontSize, weight: .bold))
                     .foregroundColor(.black.opacity(0.6))
+                let label = Text(territory.abbreviation)
+                    .font(.system(size: labelFontSize, weight: .bold))
+                    .foregroundColor(.white)
 
-                let labelPoint = CGPoint(x: center.x, y: labelY)
                 context.draw(context.resolve(shadow), at: CGPoint(x: labelPoint.x + 0.5, y: labelPoint.y + 0.5), anchor: .center)
                 context.draw(context.resolve(label), at: labelPoint, anchor: .center)
             }
@@ -264,23 +263,12 @@ struct MapView: View {
 
     private func debugOverlay(width w: CGFloat, height h: CGFloat) -> some View {
         Canvas { context, size in
-            let renderables = TerritoryData.all.filter { $0.parentTerritory == nil }
-
-            for territory in renderables {
+            for territory in TerritoryData.all.filter({ $0.parentTerritory == nil }) {
                 guard let poly = territory.polygon else { continue }
                 let path = polygonPath(poly, width: w, height: h)
                 context.stroke(path, with: .color(.red), lineWidth: 1)
-            }
-
-            for territory in renderables {
                 let center = CGPoint(x: territory.unitAnchor.x * w, y: territory.unitAnchor.y * h)
-                let dotSize: CGFloat = 5
-                let dotRect = CGRect(
-                    x: center.x - dotSize / 2,
-                    y: center.y - dotSize / 2,
-                    width: dotSize,
-                    height: dotSize
-                )
+                let dotRect = CGRect(x: center.x - 2.5, y: center.y - 2.5, width: 5, height: 5)
                 context.fill(Path(ellipseIn: dotRect), with: .color(.green))
             }
         }
@@ -302,7 +290,7 @@ struct MapView: View {
     }
 }
 
-// MARK: - Hit Testing (delegated to TerritoryHitTester)
+// MARK: - Hit Testing
 
 func territoryAtPoint(_ normalizedPoint: CGPoint) -> Territory? {
     TerritoryData.hitTester.territory(at: normalizedPoint)

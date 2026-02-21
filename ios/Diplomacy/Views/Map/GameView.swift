@@ -88,7 +88,7 @@ struct GameView: View {
     private var mapContent: some View {
         ZStack {
             // Map
-            MapView(viewModel: mapViewModel)
+            MapView(viewModel: mapViewModel, debugMode: true)
 
             // Transparent tap overlay — converts screen taps to map coordinates
             GeometryReader { geometry in
@@ -124,12 +124,18 @@ struct GameView: View {
             // Order arrows overlay
             if !orderViewModel.orders.isEmpty || orderViewModel.isActive {
                 GeometryReader { geometry in
+                    let mapCanvasSize = CGSize(
+                        width: geometry.size.width,
+                        height: geometry.size.width / MapView.mapAspect
+                    )
                     OrderArrowsOverlay(
                         orders: orderViewModel.orders,
                         activeOrder: orderViewModel.currentOrder,
-                        mapSize: geometry.size,
+                        mapSize: mapCanvasSize,
                         palette: mapViewModel.palette
                     )
+                    // Center the overlay in the full view, matching MapView's ZStack centering
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .scaleEffect(mapViewModel.scale)
                     .offset(mapViewModel.offset)
                     .allowsHitTesting(false)
@@ -217,11 +223,15 @@ struct GameView: View {
     /// Convert a screen tap location to normalized 0-1 map coordinates,
     /// accounting for current zoom (scale) and pan (offset).
     private func screenToMap(_ screenPoint: CGPoint, in viewSize: CGSize) -> CGPoint {
-        // Reverse the offset and scale transforms applied to the map canvas
+        let mapHeight = viewSize.width / MapView.mapAspect
+        // Reverse the offset and scale transforms applied to the map canvas.
+        // Scale is anchored at the view center (viewSize/2). After unscaling,
+        // convert from parent coords to map-local coords by accounting for the
+        // vertical centering offset: map top-left is at y = (viewHeight - mapHeight)/2.
         let x = (screenPoint.x - viewSize.width / 2 - mapViewModel.offset.width) / mapViewModel.scale + viewSize.width / 2
-        let y = (screenPoint.y - viewSize.height / 2 - mapViewModel.offset.height) / mapViewModel.scale + viewSize.height / 2
-        // Normalize to 0-1 range
-        return CGPoint(x: x / viewSize.width, y: y / viewSize.height)
+        let y = (screenPoint.y - viewSize.height / 2 - mapViewModel.offset.height) / mapViewModel.scale + mapHeight / 2
+        // Normalize to 0-1 range against actual map canvas dimensions
+        return CGPoint(x: x / viewSize.width, y: y / mapHeight)
     }
 
     // MARK: - Territory Tap Handling

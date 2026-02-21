@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MapView: View {
     @StateObject var viewModel: MapViewModel
+    var debugMode: Bool = false
     @GestureState private var gestureScale: CGFloat = 1.0
     @GestureState private var gestureDrag: CGSize = .zero
 
@@ -10,8 +11,8 @@ struct MapView: View {
             let mapSize = geometry.size
 
             ZStack {
-                // Map canvas
-                mapCanvas(mapSize: mapSize)
+                // Map layers: base image + ownership overlay + interactive overlay
+                mapLayers(mapSize: mapSize)
                     .scaleEffect(viewModel.scale * gestureScale)
                     .offset(
                         x: viewModel.offset.width + gestureDrag.width,
@@ -44,43 +45,62 @@ struct MapView: View {
         }
     }
 
-    // MARK: - Map Canvas
+    // MARK: - Map Layers
 
-    private func mapCanvas(mapSize: CGSize) -> some View {
+    /// Aspect ratio derived from the actual DiplomacyMap image asset at runtime.
+    /// Falls back to SVG viewBox dimensions (1835×1360) if the image can't be loaded.
+    static let mapAspect: CGFloat = {
+        if let uiImage = UIImage(named: "DiplomacyMap") {
+            let aspect = uiImage.size.width / uiImage.size.height
+            print("✅ DiplomacyMap actual size: \(uiImage.size), aspect: \(aspect)")
+            return aspect
+        }
+        print("⚠️ DiplomacyMap image not found, falling back to hardcoded aspect ratio")
+        return 1835.0 / 1360.0
+    }()
+
+    private func mapLayers(mapSize: CGSize) -> some View {
+        // Size the map content to fill available width, preserving aspect ratio
+        let w = mapSize.width
+        let h = w / Self.mapAspect
+
+        return ZStack(alignment: .topLeading) {
+            // Layer 1: SVG base map image (coastlines, borders, terrain, labels)
+            Image("DiplomacyMap")
+                .resizable()
+                .frame(width: w, height: h)
+
+            // Layer 2: Ownership color overlays + selection highlights
+            ownershipOverlay(width: w, height: h)
+
+            // Layer 3: Interactive elements (supply centers, units)
+            interactiveOverlay(width: w, height: h)
+
+            // Layer 4: Debug overlay (polygon outlines + center dots)
+            if debugMode {
+                debugOverlay(width: w, height: h)
+            }
+        }
+        .frame(width: w, height: h)
+        .contentShape(Rectangle())
+    }
+
+    /// Semi-transparent ownership fills and selection/adjacency strokes.
+    private func ownershipOverlay(width w: CGFloat, height h: CGFloat) -> some View {
         Canvas { context, size in
-            let w = size.width
-            let h = size.height
-
             let renderables = TerritoryData.all.filter { $0.parentTerritory == nil }
 
-            // Pass 1: Sea zone fills
-            for territory in renderables where territory.isSea {
-                guard let poly = territory.polygon else { continue }
-                let path = polygonPath(poly, width: w, height: h)
-                let fillColor = viewModel.territoryColor(for: territory)
-                context.fill(path, with: .color(fillColor.opacity(0.35)))
-            }
-
-            // Pass 2: Land fills
-            for territory in renderables where territory.isLand {
-                guard let poly = territory.polygon else { continue }
-                let path = polygonPath(poly, width: w, height: h)
-                let fillColor = viewModel.territoryColor(for: territory)
-                context.fill(path, with: .color(fillColor.opacity(0.8)))
-            }
-
-            // Pass 3: Borders
+            // Ownership fills — only territories with an owner
             for territory in renderables {
+                let color = viewModel.territoryColor(for: territory)
+                guard color != .clear else { continue }
                 guard let poly = territory.polygon else { continue }
                 let path = polygonPath(poly, width: w, height: h)
-                if territory.isSea {
-                    context.stroke(path, with: .color(Color(hex: 0x6699CC).opacity(0.4)), lineWidth: 0.5)
-                } else {
-                    context.stroke(path, with: .color(.black.opacity(0.3)), lineWidth: 1)
-                }
+                let opacity: Double = territory.isSea ? 0.25 : 0.35
+                context.fill(path, with: .color(color.opacity(opacity)))
             }
 
-            // Pass 4: Selection / adjacency highlights
+            // Selection / adjacency highlights
             for territory in renderables {
                 guard let poly = territory.polygon else { continue }
                 let isSelected = viewModel.selectedTerritory?.id == territory.id
@@ -96,8 +116,17 @@ struct MapView: View {
                     context.stroke(path, with: .color(.appWarning), style: StrokeStyle(lineWidth: 2, dash: [4, 4]))
                 }
             }
+        }
+        .frame(width: w, height: h)
+        .allowsHitTesting(false)
+    }
 
-            // Pass 5: Supply center markers
+    /// Supply center markers and unit circles drawn over the base map.
+    private func interactiveOverlay(width w: CGFloat, height h: CGFloat) -> some View {
+        Canvas { context, size in
+            let renderables = TerritoryData.all.filter { $0.parentTerritory == nil }
+
+            // Supply center markers
             for territory in renderables where territory.isSupplyCenter {
                 let center = CGPoint(x: territory.center.x * w, y: territory.center.y * h)
                 let scSize: CGFloat = 6
@@ -111,25 +140,7 @@ struct MapView: View {
                 context.stroke(Path(ellipseIn: scRect), with: .color(.black.opacity(0.5)), lineWidth: 0.75)
             }
 
-            // Pass 6: Territory labels
-            for territory in renderables {
-                let showLabel = viewModel.showDetailedLabels || !territory.isSea
-                guard showLabel else { continue }
-                let center = CGPoint(x: territory.center.x * w, y: territory.center.y * h)
-                let hasUnit = viewModel.unitOn(territory.id) != nil
-                let labelY = hasUnit ? center.y - 10 : center.y - 2
-                let labelSize: CGFloat = hasUnit ? 7 : 8
-                let text = Text(territory.abbreviation)
-                    .font(.system(size: labelSize, weight: .semibold))
-                    .foregroundColor(territory.isSea ? .blue.opacity(0.6) : .black.opacity(0.7))
-                context.draw(
-                    context.resolve(text),
-                    at: CGPoint(x: center.x, y: labelY),
-                    anchor: .center
-                )
-            }
-
-            // Pass 7: Units
+            // Units
             for territory in renderables {
                 guard let unit = viewModel.unitOn(territory.id) else { continue }
                 let center = CGPoint(x: territory.center.x * w, y: territory.center.y * h)
@@ -142,6 +153,9 @@ struct MapView: View {
                     width: unitRadius * 2,
                     height: unitRadius * 2
                 )
+
+                // White outline behind for contrast over the map image
+                context.stroke(Path(ellipseIn: unitRect), with: .color(.black.opacity(0.3)), lineWidth: 3)
                 context.fill(Path(ellipseIn: unitRect), with: .color(powerColor))
                 context.stroke(Path(ellipseIn: unitRect), with: .color(.white), lineWidth: 1.5)
 
@@ -155,7 +169,39 @@ struct MapView: View {
                 )
             }
         }
-        .contentShape(Rectangle())
+        .frame(width: w, height: h)
+        .allowsHitTesting(false)
+    }
+
+    // MARK: - Debug Overlay
+
+    /// Draws polygon outlines (red) and territory center dots (green) for alignment verification.
+    private func debugOverlay(width w: CGFloat, height h: CGFloat) -> some View {
+        Canvas { context, size in
+            let renderables = TerritoryData.all.filter { $0.parentTerritory == nil }
+
+            // Red polygon outlines
+            for territory in renderables {
+                guard let poly = territory.polygon else { continue }
+                let path = polygonPath(poly, width: w, height: h)
+                context.stroke(path, with: .color(.red), lineWidth: 1)
+            }
+
+            // Green center dots
+            for territory in renderables {
+                let center = CGPoint(x: territory.center.x * w, y: territory.center.y * h)
+                let dotSize: CGFloat = 5
+                let dotRect = CGRect(
+                    x: center.x - dotSize / 2,
+                    y: center.y - dotSize / 2,
+                    width: dotSize,
+                    height: dotSize
+                )
+                context.fill(Path(ellipseIn: dotRect), with: .color(.green))
+            }
+        }
+        .frame(width: w, height: h)
+        .allowsHitTesting(false)
     }
 
     // MARK: - Polygon Helpers

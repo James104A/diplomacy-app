@@ -83,7 +83,8 @@ class MapViewModel: ObservableObject {
         if let power = ownerPower(for: territory.id) {
             return power.color(palette: palette)
         }
-        return territory.isSea ? Color(hex: 0xB3D9FF) : Color(hex: 0xE8E0D0)
+        // Unowned territories: no overlay — base map image shows through
+        return .clear
     }
 
     // MARK: - Territory Selection

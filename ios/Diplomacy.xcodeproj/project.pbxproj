@@ -35,7 +35,8 @@
 		F44BFDA42F4265EE00FC2F39 /* MapModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDA32F4265EE00FC2F39 /* MapModels.swift */; };
 		F44BFDA62F4265EE00FC2F39 /* MessagingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDA52F4265EE00FC2F39 /* MessagingModels.swift */; };
 		F44BFDA82F4265EE00FC2F39 /* TerritoryData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDA72F4265EE00FC2F39 /* TerritoryData.swift */; };
-		F44BFD9C2F4265EE00FC2F39 /* TerritoryPolygonData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFD9B2F4265EE00FC2F39 /* TerritoryPolygonData.swift */; };
+		F44BFDE42F4265EE00FC2F39 /* TerritoryHitTester.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDE52F4265EE00FC2F39 /* TerritoryHitTester.swift */; };
+		F44BFDE62F4265EE00FC2F39 /* territories.json in Resources */ = {isa = PBXBuildFile; fileRef = F44BFDE72F4265EE00FC2F39 /* territories.json */; };
 		F44BFDAA2F4265EE00FC2F39 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDA92F4265EE00FC2F39 /* AuthService.swift */; };
 		F44BFDAC2F4265EE00FC2F39 /* GameService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDAB2F4265EE00FC2F39 /* GameService.swift */; };
 		F44BFDAE2F4265EE00FC2F39 /* MessagingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDAD2F4265EE00FC2F39 /* MessagingService.swift */; };
@@ -62,6 +63,7 @@
 		F44BFDD82F4265EE00FC2F39 /* MessagingHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDD72F4265EE00FC2F39 /* MessagingHubView.swift */; };
 		F44BFDDA2F4265EE00FC2F39 /* ConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDD92F4265EE00FC2F39 /* ConversationView.swift */; };
 		F44BFDDC2F4265EE00FC2F39 /* RulesReferenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDDB2F4265EE00FC2F39 /* RulesReferenceView.swift */; };
+		F44BFDE12F4265EE00FC2F39 /* ComparableExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDE22F4265EE00FC2F39 /* ComparableExtensions.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -94,7 +96,8 @@
 		F44BFDA32F4265EE00FC2F39 /* MapModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapModels.swift; sourceTree = "<group>"; };
 		F44BFDA52F4265EE00FC2F39 /* MessagingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagingModels.swift; sourceTree = "<group>"; };
 		F44BFDA72F4265EE00FC2F39 /* TerritoryData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerritoryData.swift; sourceTree = "<group>"; };
-		F44BFD9B2F4265EE00FC2F39 /* TerritoryPolygonData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerritoryPolygonData.swift; sourceTree = "<group>"; };
+		F44BFDE52F4265EE00FC2F39 /* TerritoryHitTester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerritoryHitTester.swift; sourceTree = "<group>"; };
+		F44BFDE72F4265EE00FC2F39 /* territories.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = territories.json; sourceTree = "<group>"; };
 		F44BFDA92F4265EE00FC2F39 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		F44BFDAB2F4265EE00FC2F39 /* GameService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameService.swift; sourceTree = "<group>"; };
 		F44BFDAD2F4265EE00FC2F39 /* MessagingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagingService.swift; sourceTree = "<group>"; };
@@ -121,6 +124,7 @@
 		F44BFDD72F4265EE00FC2F39 /* MessagingHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagingHubView.swift; sourceTree = "<group>"; };
 		F44BFDD92F4265EE00FC2F39 /* ConversationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationView.swift; sourceTree = "<group>"; };
 		F44BFDDB2F4265EE00FC2F39 /* RulesReferenceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulesReferenceView.swift; sourceTree = "<group>"; };
+		F44BFDE22F4265EE00FC2F39 /* ComparableExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComparableExtensions.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -139,9 +143,12 @@
 			children = (
 				F44BFD6E2F4265EE00FC2F39 /* Diplomacy/Components */,
 				F44BFD722F4265EE00FC2F39 /* Diplomacy/DesignSystem */,
+				F44BFDE32F4265EE00FC2F39 /* Diplomacy/Extensions */,
 				F44BFD9E2F4265EE00FC2F39 /* Diplomacy/Models */,
 				F44BFD762F4265EE00FC2F39 /* Diplomacy/Navigation */,
 				F44BFD7A2F4265EE00FC2F39 /* Diplomacy/Networking */,
+				F44BFDE92F4265EE00FC2F39 /* Diplomacy/Resources */,
+				F44BFDE82F4265EE00FC2F39 /* Diplomacy/Services */,
 				F44BFD832F4265EE00FC2F39 /* Diplomacy/Views */,
 				A1B2C3D400000031 /* Diplomacy */,
 				A1B2C3D400000032 /* Products */,
@@ -173,6 +180,14 @@
 				A1B2C3D400000014 /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		F44BFDE32F4265EE00FC2F39 /* Diplomacy/Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				F44BFDE22F4265EE00FC2F39 /* ComparableExtensions.swift */,
+			);
+			path = Diplomacy/Extensions;
 			sourceTree = "<group>";
 		};
 		F44BFD6E2F4265EE00FC2F39 /* Diplomacy/Components */ = {
@@ -282,9 +297,24 @@
 				F44BFDA32F4265EE00FC2F39 /* MapModels.swift */,
 				F44BFDA52F4265EE00FC2F39 /* MessagingModels.swift */,
 				F44BFDA72F4265EE00FC2F39 /* TerritoryData.swift */,
-				F44BFD9B2F4265EE00FC2F39 /* TerritoryPolygonData.swift */,
 			);
 			path = Diplomacy/Models;
+			sourceTree = "<group>";
+		};
+		F44BFDE82F4265EE00FC2F39 /* Diplomacy/Services */ = {
+			isa = PBXGroup;
+			children = (
+				F44BFDE52F4265EE00FC2F39 /* TerritoryHitTester.swift */,
+			);
+			path = Diplomacy/Services;
+			sourceTree = "<group>";
+		};
+		F44BFDE92F4265EE00FC2F39 /* Diplomacy/Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F44BFDE72F4265EE00FC2F39 /* territories.json */,
+			);
+			path = Diplomacy/Resources;
 			sourceTree = "<group>";
 		};
 		F44BFDDE2F4265EE00FC2F39 /* Auth */ = {
@@ -384,6 +414,7 @@
 			files = (
 				A1B2C3D400000004 /* Preview Assets.xcassets in Resources */,
 				A1B2C3D400000003 /* Assets.xcassets in Resources */,
+				F44BFDE62F4265EE00FC2F39 /* territories.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -420,7 +451,7 @@
 				F44BFDA42F4265EE00FC2F39 /* MapModels.swift in Sources */,
 				F44BFDA62F4265EE00FC2F39 /* MessagingModels.swift in Sources */,
 				F44BFDA82F4265EE00FC2F39 /* TerritoryData.swift in Sources */,
-				F44BFD9C2F4265EE00FC2F39 /* TerritoryPolygonData.swift in Sources */,
+				F44BFDE42F4265EE00FC2F39 /* TerritoryHitTester.swift in Sources */,
 				F44BFDAA2F4265EE00FC2F39 /* AuthService.swift in Sources */,
 				F44BFDAC2F4265EE00FC2F39 /* GameService.swift in Sources */,
 				F44BFDAE2F4265EE00FC2F39 /* MessagingService.swift in Sources */,
@@ -447,6 +478,7 @@
 				F44BFDD82F4265EE00FC2F39 /* MessagingHubView.swift in Sources */,
 				F44BFDDA2F4265EE00FC2F39 /* ConversationView.swift in Sources */,
 				F44BFDDC2F4265EE00FC2F39 /* RulesReferenceView.swift in Sources */,
+				F44BFDE12F4265EE00FC2F39 /* ComparableExtensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

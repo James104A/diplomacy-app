@@ -1,8 +1,14 @@
 import SwiftUI
 
 struct MapView: View {
-    @StateObject var viewModel: MapViewModel
+    @ObservedObject var viewModel: MapViewModel
     var debugMode: Bool = false
+
+    // Callbacks for tap events — GameView handles game logic
+    var onTap: ((CGPoint) -> Void)?       // normalized 0-1 map coords
+    var onDoubleTap: (() -> Void)?
+    var onLongPress: ((CGPoint) -> Void)?  // normalized 0-1 map coords
+
     @GestureState private var gestureScale: CGFloat = 1.0
     @GestureState private var gestureDrag: CGSize = .zero
 
@@ -11,44 +17,38 @@ struct MapView: View {
             let mapSize = geometry.size
 
             ZStack {
-                // Map layers: base image + ownership overlay + interactive overlay
                 mapLayers(mapSize: mapSize)
                     .scaleEffect(viewModel.scale * gestureScale)
                     .offset(
                         x: viewModel.offset.width + gestureDrag.width,
                         y: viewModel.offset.height + gestureDrag.height
                     )
-                    .gesture(combinedGesture)
-
-                // Territory info overlay
-                if viewModel.showTerritoryInfo, let territory = viewModel.selectedTerritory {
-                    VStack {
-                        Spacer()
-                        TerritoryInfoOverlay(
-                            territory: territory,
-                            unit: viewModel.unitOn(territory.id),
-                            owner: viewModel.ownerPower(for: territory.id),
-                            showAdjacencies: viewModel.showAdjacencies,
-                            palette: viewModel.palette
-                        )
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
-                    .animation(.easeInOut(duration: 0.2), value: viewModel.selectedTerritory?.id)
-                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture(count: 2) {
+                onDoubleTap?()
+            }
+            .onTapGesture(count: 1) { location in
+                let normalized = screenToMap(location, in: mapSize)
+                onTap?(normalized)
+            }
+            .gesture(longPressGesture(in: mapSize))
+            .simultaneousGesture(pinchAndDragGesture)
+            .onAppear {
+                viewModel.screenSize = geometry.size
+                viewModel.trySetInitialPosition()
+            }
+            .onChange(of: geometry.size) { newSize in
+                viewModel.screenSize = newSize
             }
         }
         .background(Color(hex: 0xB3D9FF))
         .clipped()
-        .task {
-            await viewModel.loadGameState()
-            viewModel.subscribeToWebSocket()
-        }
     }
 
     // MARK: - Map Layers
 
     /// Aspect ratio derived from the actual DiplomacyMap image asset at runtime.
-    /// Falls back to SVG viewBox dimensions (1835×1360) if the image can't be loaded.
     static let mapAspect: CGFloat = {
         if let uiImage = UIImage(named: "DiplomacyMap") {
             let aspect = uiImage.size.width / uiImage.size.height
@@ -60,23 +60,21 @@ struct MapView: View {
     }()
 
     private func mapLayers(mapSize: CGSize) -> some View {
-        // Size the map content to fill available width, preserving aspect ratio
         let w = mapSize.width
         let h = w / Self.mapAspect
 
         return ZStack(alignment: .topLeading) {
-            // Layer 1: SVG base map image (coastlines, borders, terrain, labels)
             Image("DiplomacyMap")
                 .resizable()
                 .frame(width: w, height: h)
 
-            // Layer 2: Ownership color overlays + selection highlights
             ownershipOverlay(width: w, height: h)
-
-            // Layer 3: Interactive elements (supply centers, units)
             interactiveOverlay(width: w, height: h)
 
-            // Layer 4: Debug overlay (polygon outlines + center dots)
+            if viewModel.showDetailedLabels {
+                labelOverlay(width: w, height: h)
+            }
+
             if debugMode {
                 debugOverlay(width: w, height: h)
             }
@@ -85,12 +83,75 @@ struct MapView: View {
         .contentShape(Rectangle())
     }
 
-    /// Semi-transparent ownership fills and selection/adjacency strokes.
+    // MARK: - Coordinate Conversion
+
+    /// Convert a screen tap to normalized 0-1 map coordinates.
+    /// Uses the SAME GeometryReader size as the rendering, so coordinates always match.
+    private func screenToMap(_ screenPoint: CGPoint, in viewSize: CGSize) -> CGPoint {
+        guard viewSize.width > 0, viewSize.height > 0 else { return .zero }
+        let mapHeight = viewSize.width / Self.mapAspect
+        let x = (screenPoint.x - viewSize.width / 2 - viewModel.offset.width) / viewModel.scale + viewSize.width / 2
+        let y = (screenPoint.y - viewSize.height / 2 - viewModel.offset.height) / viewModel.scale + mapHeight / 2
+        return CGPoint(x: x / viewSize.width, y: y / mapHeight)
+    }
+
+    // MARK: - Gestures
+
+    /// Combined pinch + drag gesture for zoom and pan.
+    private var pinchAndDragGesture: some Gesture {
+        MagnificationGesture()
+            .updating($gestureScale) { value, state, _ in
+                state = value
+            }
+            .onEnded { value in
+                let newScale = (viewModel.scale * value).clamped(to: 1.0...5.0)
+                withAnimation(.easeOut(duration: 0.15)) {
+                    viewModel.scale = newScale
+                    viewModel.offset = viewModel.clampOffset(
+                        viewModel.offset, scale: newScale, screenSize: viewModel.screenSize
+                    )
+                }
+            }
+            .simultaneously(with:
+                DragGesture()
+                    .updating($gestureDrag) { value, state, _ in
+                        state = value.translation
+                    }
+                    .onEnded { value in
+                        let proposed = CGSize(
+                            width: viewModel.offset.width + value.translation.width,
+                            height: viewModel.offset.height + value.translation.height
+                        )
+                        viewModel.offset = viewModel.clampOffset(
+                            proposed, scale: viewModel.scale, screenSize: viewModel.screenSize
+                        )
+                    }
+            )
+    }
+
+    /// Long-press gesture to show adjacencies.
+    private func longPressGesture(in viewSize: CGSize) -> some Gesture {
+        LongPressGesture(minimumDuration: 0.5)
+            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .local))
+            .onEnded { value in
+                switch value {
+                case .second(true, let drag):
+                    if let location = drag?.location {
+                        let normalized = screenToMap(location, in: viewSize)
+                        onLongPress?(normalized)
+                    }
+                default:
+                    break
+                }
+            }
+    }
+
+    // MARK: - Overlays
+
     private func ownershipOverlay(width w: CGFloat, height h: CGFloat) -> some View {
         Canvas { context, size in
             let renderables = TerritoryData.all.filter { $0.parentTerritory == nil }
 
-            // Ownership fills — only territories with an owner
             for territory in renderables {
                 let color = viewModel.territoryColor(for: territory)
                 guard color != .clear else { continue }
@@ -100,7 +161,6 @@ struct MapView: View {
                 context.fill(path, with: .color(color.opacity(opacity)))
             }
 
-            // Selection / adjacency highlights
             for territory in renderables {
                 guard let poly = territory.polygon else { continue }
                 let isSelected = viewModel.selectedTerritory?.id == territory.id
@@ -121,18 +181,23 @@ struct MapView: View {
         .allowsHitTesting(false)
     }
 
-    /// Supply center markers and unit circles drawn over the base map.
     private func interactiveOverlay(width w: CGFloat, height h: CGFloat) -> some View {
-        Canvas { context, size in
+        let currentScale = viewModel.scale
+        let unitRadius = (11.0 / currentScale).clamped(to: 6...18)
+        let fontSize = (12.0 / currentScale).clamped(to: 7...16)
+        let strokeWidth = (1.5 / currentScale).clamped(to: 0.5...2.5)
+        let bgStrokeWidth = (3.0 / currentScale).clamped(to: 1.0...4.0)
+        let scSize = (6.0 / currentScale).clamped(to: 3...10)
+        let scOffset = (12.0 / currentScale).clamped(to: 6...18)
+
+        return Canvas { context, size in
             let renderables = TerritoryData.all.filter { $0.parentTerritory == nil }
 
-            // Supply center markers
             for territory in renderables where territory.isSupplyCenter {
-                let center = CGPoint(x: territory.center.x * w, y: territory.center.y * h)
-                let scSize: CGFloat = 6
+                let center = CGPoint(x: territory.unitAnchor.x * w, y: territory.unitAnchor.y * h)
                 let scRect = CGRect(
                     x: center.x - scSize / 2,
-                    y: center.y + 12,
+                    y: center.y + scOffset,
                     width: scSize,
                     height: scSize
                 )
@@ -140,12 +205,10 @@ struct MapView: View {
                 context.stroke(Path(ellipseIn: scRect), with: .color(.black.opacity(0.5)), lineWidth: 0.75)
             }
 
-            // Units
             for territory in renderables {
                 guard let unit = viewModel.unitOn(territory.id) else { continue }
-                let center = CGPoint(x: territory.center.x * w, y: territory.center.y * h)
+                let center = CGPoint(x: territory.unitAnchor.x * w, y: territory.unitAnchor.y * h)
                 let powerColor = unit.powerEnum?.color(palette: viewModel.palette) ?? .gray
-                let unitRadius: CGFloat = 11
                 let unitCenter = CGPoint(x: center.x, y: center.y + 4)
                 let unitRect = CGRect(
                     x: unitCenter.x - unitRadius,
@@ -154,13 +217,12 @@ struct MapView: View {
                     height: unitRadius * 2
                 )
 
-                // White outline behind for contrast over the map image
-                context.stroke(Path(ellipseIn: unitRect), with: .color(.black.opacity(0.3)), lineWidth: 3)
+                context.stroke(Path(ellipseIn: unitRect), with: .color(.black.opacity(0.3)), lineWidth: bgStrokeWidth)
                 context.fill(Path(ellipseIn: unitRect), with: .color(powerColor))
-                context.stroke(Path(ellipseIn: unitRect), with: .color(.white), lineWidth: 1.5)
+                context.stroke(Path(ellipseIn: unitRect), with: .color(.white), lineWidth: strokeWidth)
 
                 let unitText = Text(unit.isArmy ? "A" : "F")
-                    .font(.system(size: 12, weight: .black))
+                    .font(.system(size: fontSize, weight: .black))
                     .foregroundColor(.white)
                 context.draw(
                     context.resolve(unitText),
@@ -173,23 +235,45 @@ struct MapView: View {
         .allowsHitTesting(false)
     }
 
-    // MARK: - Debug Overlay
+    private func labelOverlay(width w: CGFloat, height h: CGFloat) -> some View {
+        let currentScale = viewModel.scale
+        let labelFontSize = (10.0 / currentScale).clamped(to: 5...12)
 
-    /// Draws polygon outlines (red) and territory center dots (green) for alignment verification.
+        return Canvas { context, size in
+            let renderables = TerritoryData.all.filter { $0.parentTerritory == nil }
+
+            for territory in renderables {
+                let center = CGPoint(x: territory.labelAnchor.x * w, y: territory.labelAnchor.y * h)
+                let labelY = center.y - (16.0 / currentScale).clamped(to: 8...20)
+
+                let label = Text(territory.abbreviation)
+                    .font(.system(size: labelFontSize, weight: .bold))
+                    .foregroundColor(.white)
+                let shadow = Text(territory.abbreviation)
+                    .font(.system(size: labelFontSize, weight: .bold))
+                    .foregroundColor(.black.opacity(0.6))
+
+                let labelPoint = CGPoint(x: center.x, y: labelY)
+                context.draw(context.resolve(shadow), at: CGPoint(x: labelPoint.x + 0.5, y: labelPoint.y + 0.5), anchor: .center)
+                context.draw(context.resolve(label), at: labelPoint, anchor: .center)
+            }
+        }
+        .frame(width: w, height: h)
+        .allowsHitTesting(false)
+    }
+
     private func debugOverlay(width w: CGFloat, height h: CGFloat) -> some View {
         Canvas { context, size in
             let renderables = TerritoryData.all.filter { $0.parentTerritory == nil }
 
-            // Red polygon outlines
             for territory in renderables {
                 guard let poly = territory.polygon else { continue }
                 let path = polygonPath(poly, width: w, height: h)
                 context.stroke(path, with: .color(.red), lineWidth: 1)
             }
 
-            // Green center dots
             for territory in renderables {
-                let center = CGPoint(x: territory.center.x * w, y: territory.center.y * h)
+                let center = CGPoint(x: territory.unitAnchor.x * w, y: territory.unitAnchor.y * h)
                 let dotSize: CGFloat = 5
                 let dotRect = CGRect(
                     x: center.x - dotSize / 2,
@@ -206,7 +290,6 @@ struct MapView: View {
 
     // MARK: - Polygon Helpers
 
-    /// Build a closed Path from normalized polygon vertices scaled to map dimensions.
     private func polygonPath(_ vertices: [CGPoint], width: CGFloat, height: CGFloat) -> Path {
         guard vertices.count >= 3 else { return Path() }
         var path = Path()
@@ -217,69 +300,10 @@ struct MapView: View {
         path.closeSubpath()
         return path
     }
-
-    // MARK: - Gestures
-
-    private var combinedGesture: some Gesture {
-        let pinch = MagnificationGesture()
-            .updating($gestureScale) { value, state, _ in
-                state = value
-            }
-            .onEnded { value in
-                viewModel.scale = min(max(viewModel.scale * value, 0.5), 4.0)
-            }
-
-        let drag = DragGesture()
-            .updating($gestureDrag) { value, state, _ in
-                state = value.translation
-            }
-            .onEnded { value in
-                viewModel.offset.width += value.translation.width
-                viewModel.offset.height += value.translation.height
-            }
-
-        return pinch.simultaneously(with: drag)
-    }
 }
 
-// MARK: - Point-in-Polygon Hit Testing
+// MARK: - Hit Testing (delegated to TerritoryHitTester)
 
-/// Ray-casting algorithm: cast horizontal ray from point, count polygon edge crossings.
-/// Odd crossings = inside. Works with normalized 0-1 coordinates.
-func pointInPolygon(_ point: CGPoint, polygon: [CGPoint]) -> Bool {
-    let n = polygon.count
-    guard n >= 3 else { return false }
-    var inside = false
-    var j = n - 1
-    for i in 0..<n {
-        let vi = polygon[i]
-        let vj = polygon[j]
-        if (vi.y > point.y) != (vj.y > point.y) {
-            let intersectX = vj.x + (point.y - vj.y) / (vi.y - vj.y) * (vi.x - vj.x)
-            if point.x < intersectX {
-                inside.toggle()
-            }
-        }
-        j = i
-    }
-    return inside
-}
-
-/// Find territory at a normalized 0-1 map point. Tests land before sea so coastlines resolve to land.
 func territoryAtPoint(_ normalizedPoint: CGPoint) -> Territory? {
-    let renderables = TerritoryData.all.filter { $0.parentTerritory == nil }
-
-    // Test land territories first (land overlaps sea at coastlines)
-    for territory in renderables where territory.isLand {
-        if let poly = territory.polygon, pointInPolygon(normalizedPoint, polygon: poly) {
-            return territory
-        }
-    }
-    // Then sea zones
-    for territory in renderables where territory.isSea {
-        if let poly = territory.polygon, pointInPolygon(normalizedPoint, polygon: poly) {
-            return territory
-        }
-    }
-    return nil
+    TerritoryData.hitTester.territory(at: normalizedPoint)
 }

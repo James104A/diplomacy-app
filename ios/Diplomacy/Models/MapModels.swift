@@ -108,22 +108,54 @@ struct Territory: Identifiable {
     let type: TerritoryType
     let isSupplyCenter: Bool
     let homeCenter: Power?
-    let center: CGPoint // Normalized map position (0-1 range)
+    let center: CGPoint // Normalized map position (0-1 range), same as unitAnchor
+    let labelAnchor: CGPoint // Where to draw territory label
+    let unitAnchor: CGPoint // Where to draw unit icon
     let parentTerritory: String?
     let polygon: [CGPoint]? // Boundary vertices in normalized 0-1 coordinates
+    let adjacencies: [String] // Adjacent territory IDs
+    let coasts: [CoastVariant]? // For multi-coast territories (BUL, SPA, STP)
+    let disambiguationPriority: Int // 0 = highest (land), 10 = sea
 
-    init(id: String, name: String, type: TerritoryType, isSupplyCenter: Bool, homeCenter: Power?, center: CGPoint, parentTerritory: String?, polygon: [CGPoint]? = nil) {
+    init(id: String, name: String, type: TerritoryType, isSupplyCenter: Bool, homeCenter: Power?, center: CGPoint, parentTerritory: String?, polygon: [CGPoint]? = nil, adjacencies: [String] = [], coasts: [CoastVariant]? = nil, disambiguationPriority: Int = 0) {
         self.id = id
         self.name = name
         self.type = type
         self.isSupplyCenter = isSupplyCenter
         self.homeCenter = homeCenter
         self.center = center
+        self.labelAnchor = center
+        self.unitAnchor = center
         self.parentTerritory = parentTerritory
         self.polygon = polygon
+        self.adjacencies = adjacencies
+        self.coasts = coasts
+        self.disambiguationPriority = disambiguationPriority
+    }
+
+    init(id: String, name: String, type: TerritoryType, isSupplyCenter: Bool, homeCenter: Power?, labelAnchor: CGPoint, unitAnchor: CGPoint, parentTerritory: String?, polygon: [CGPoint]?, adjacencies: [String], coasts: [CoastVariant]?, disambiguationPriority: Int) {
+        self.id = id
+        self.name = name
+        self.type = type
+        self.isSupplyCenter = isSupplyCenter
+        self.homeCenter = homeCenter
+        self.center = unitAnchor
+        self.labelAnchor = labelAnchor
+        self.unitAnchor = unitAnchor
+        self.parentTerritory = parentTerritory
+        self.polygon = polygon
+        self.adjacencies = adjacencies
+        self.coasts = coasts
+        self.disambiguationPriority = disambiguationPriority
     }
 
     var isLand: Bool { type == .land || type == .coast }
     var isSea: Bool { type == .sea }
     var abbreviation: String { id }
+}
+
+struct CoastVariant {
+    let id: String    // e.g. "BUL/EC"
+    let name: String  // e.g. "Bulgaria (East Coast)"
+    let adjacencies: [String]
 }

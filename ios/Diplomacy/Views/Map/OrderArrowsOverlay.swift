@@ -137,8 +137,8 @@ struct OrderArrowsOverlay: View {
             return CGPoint(x: size.width / 2, y: size.height / 2)
         }
         return CGPoint(
-            x: territory.center.x * size.width,
-            y: territory.center.y * size.height
+            x: territory.unitAnchor.x * size.width,
+            y: territory.unitAnchor.y * size.height
         )
     }
 }

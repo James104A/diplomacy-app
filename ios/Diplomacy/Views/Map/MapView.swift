@@ -31,8 +31,7 @@ struct MapView: View {
                 onTap?(normalized)
             }
             .gesture(longPressGesture(in: mapSize))
-            .simultaneousGesture(pinchGesture)
-            .simultaneousGesture(panGesture)
+            .simultaneousGesture(pinchAndPanGesture)
             .onAppear {
                 viewModel.screenSize = geometry.size
                 viewModel.trySetInitialPosition()
@@ -103,7 +102,9 @@ struct MapView: View {
 
     // MARK: - Gestures
 
-    private var pinchGesture: some Gesture {
+    /// Combined pinch + drag gesture. Using `.simultaneously(with:)` ensures
+    /// a two-finger pinch is not misinterpreted as a one-finger pan.
+    private var pinchAndPanGesture: some Gesture {
         MagnificationGesture()
             .updating($gestureScale) { value, state, _ in
                 state = value
@@ -117,22 +118,21 @@ struct MapView: View {
                     )
                 }
             }
-    }
-
-    private var panGesture: some Gesture {
-        DragGesture()
-            .updating($gestureDrag) { value, state, _ in
-                state = value.translation
-            }
-            .onEnded { value in
-                let proposed = CGSize(
-                    width: viewModel.offset.width + value.translation.width,
-                    height: viewModel.offset.height + value.translation.height
-                )
-                viewModel.offset = viewModel.clampOffset(
-                    proposed, scale: viewModel.scale, screenSize: viewModel.screenSize
-                )
-            }
+            .simultaneously(with:
+                DragGesture()
+                    .updating($gestureDrag) { value, state, _ in
+                        state = value.translation
+                    }
+                    .onEnded { value in
+                        let proposed = CGSize(
+                            width: viewModel.offset.width + value.translation.width,
+                            height: viewModel.offset.height + value.translation.height
+                        )
+                        viewModel.offset = viewModel.clampOffset(
+                            proposed, scale: viewModel.scale, screenSize: viewModel.screenSize
+                        )
+                    }
+            )
     }
 
     private func longPressGesture(in viewSize: CGSize) -> some Gesture {
@@ -174,11 +174,11 @@ struct MapView: View {
 
                 if isSelected {
                     let path = polygonPath(poly, width: w, height: h)
-                    context.stroke(path, with: .color(.white), lineWidth: 3)
-                    context.stroke(path, with: .color(.yellow), lineWidth: 2)
+                    context.stroke(path, with: .color(.white), lineWidth: 1.5)
+                    context.stroke(path, with: .color(.yellow), lineWidth: 1)
                 } else if isAdjacent {
                     let path = polygonPath(poly, width: w, height: h)
-                    context.stroke(path, with: .color(.appWarning), style: StrokeStyle(lineWidth: 2, dash: [4, 4]))
+                    context.stroke(path, with: .color(.appWarning), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
                 }
             }
         }
@@ -187,12 +187,12 @@ struct MapView: View {
     }
 
     private func interactiveOverlay(width w: CGFloat, height h: CGFloat) -> some View {
-        let unitRadius: CGFloat = 11
-        let fontSize: CGFloat = 12
-        let strokeWidth: CGFloat = 1.5
-        let bgStrokeWidth: CGFloat = 3.0
-        let scSize: CGFloat = 6
-        let scOffset: CGFloat = 12
+        let unitRadius: CGFloat = 5
+        let fontSize: CGFloat = 6
+        let strokeWidth: CGFloat = 0.75
+        let bgStrokeWidth: CGFloat = 1.5
+        let scSize: CGFloat = 3
+        let scOffset: CGFloat = 7
 
         return Canvas { context, size in
             let renderables = TerritoryData.all.filter { $0.parentTerritory == nil }
@@ -213,7 +213,7 @@ struct MapView: View {
                 guard let unit = viewModel.unitOn(territory.id) else { continue }
                 let center = CGPoint(x: territory.unitAnchor.x * w, y: territory.unitAnchor.y * h)
                 let powerColor = unit.powerEnum?.color(palette: viewModel.palette) ?? .gray
-                let unitCenter = CGPoint(x: center.x, y: center.y + 4)
+                let unitCenter = CGPoint(x: center.x, y: center.y + 2)
                 let unitRect = CGRect(
                     x: unitCenter.x - unitRadius,
                     y: unitCenter.y - unitRadius,
@@ -236,24 +236,20 @@ struct MapView: View {
     }
 
     private func labelOverlay(width w: CGFloat, height h: CGFloat) -> some View {
-        let labelFontSize: CGFloat = 10
+        let labelFontSize: CGFloat = 5
 
         return Canvas { context, size in
             let renderables = TerritoryData.all.filter { $0.parentTerritory == nil }
 
             for territory in renderables {
                 let center = CGPoint(x: territory.labelAnchor.x * w, y: territory.labelAnchor.y * h)
-                let labelY = center.y - 16
+                let labelY = center.y - 8
                 let labelPoint = CGPoint(x: center.x, y: labelY)
 
-                let shadow = Text(territory.abbreviation)
-                    .font(.system(size: labelFontSize, weight: .bold))
-                    .foregroundColor(.black.opacity(0.6))
                 let label = Text(territory.abbreviation)
                     .font(.system(size: labelFontSize, weight: .bold))
                     .foregroundColor(.white)
 
-                context.draw(context.resolve(shadow), at: CGPoint(x: labelPoint.x + 0.5, y: labelPoint.y + 0.5), anchor: .center)
                 context.draw(context.resolve(label), at: labelPoint, anchor: .center)
             }
         }
@@ -266,9 +262,9 @@ struct MapView: View {
             for territory in TerritoryData.all.filter({ $0.parentTerritory == nil }) {
                 guard let poly = territory.polygon else { continue }
                 let path = polygonPath(poly, width: w, height: h)
-                context.stroke(path, with: .color(.red), lineWidth: 1)
+                context.stroke(path, with: .color(.red), lineWidth: 0.5)
                 let center = CGPoint(x: territory.unitAnchor.x * w, y: territory.unitAnchor.y * h)
-                let dotRect = CGRect(x: center.x - 2.5, y: center.y - 2.5, width: 5, height: 5)
+                let dotRect = CGRect(x: center.x - 1.5, y: center.y - 1.5, width: 3, height: 3)
                 context.fill(Path(ellipseIn: dotRect), with: .color(.green))
             }
         }

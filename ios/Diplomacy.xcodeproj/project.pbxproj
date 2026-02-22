@@ -64,6 +64,7 @@
 		F44BFDE12F4265EE00FC2F39 /* ComparableExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDE22F4265EE00FC2F39 /* ComparableExtensions.swift */; };
 		F44BFDE42F4265EE00FC2F39 /* TerritoryHitTester.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDE52F4265EE00FC2F39 /* TerritoryHitTester.swift */; };
 		F44BFDE62F4265EE00FC2F39 /* territories.json in Resources */ = {isa = PBXBuildFile; fileRef = F44BFDE72F4265EE00FC2F39 /* territories.json */; };
+		F44BFDE92F42660000FC2F39 /* PlayerRosterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDE82F42660000FC2F39 /* PlayerRosterView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -125,6 +126,7 @@
 		F44BFDE22F4265EE00FC2F39 /* ComparableExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComparableExtensions.swift; sourceTree = "<group>"; };
 		F44BFDE52F4265EE00FC2F39 /* TerritoryHitTester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerritoryHitTester.swift; sourceTree = "<group>"; };
 		F44BFDE72F4265EE00FC2F39 /* territories.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = territories.json; sourceTree = "<group>"; };
+		F44BFDE82F42660000FC2F39 /* PlayerRosterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerRosterView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -316,6 +318,7 @@
 				F44BFDCD2F4265EE00FC2F39 /* OrderPaletteView.swift */,
 				F44BFDCF2F4265EE00FC2F39 /* OrderReviewView.swift */,
 				F44BFDD32F4265EE00FC2F39 /* PatternOverlay.swift */,
+				F44BFDE82F42660000FC2F39 /* PlayerRosterView.swift */,
 				F44BFDD12F4265EE00FC2F39 /* TerritoryInfoOverlay.swift */,
 			);
 			path = Map;
@@ -479,6 +482,7 @@
 				F44BFDDA2F4265EE00FC2F39 /* ConversationView.swift in Sources */,
 				F44BFDDC2F4265EE00FC2F39 /* RulesReferenceView.swift in Sources */,
 				F44BFDE12F4265EE00FC2F39 /* ComparableExtensions.swift in Sources */,
+				F44BFDE92F42660000FC2F39 /* PlayerRosterView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

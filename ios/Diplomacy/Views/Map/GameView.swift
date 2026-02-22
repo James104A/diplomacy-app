@@ -9,6 +9,7 @@ struct GameView: View {
 
     @State private var showOrderReview = false
     @State private var showMessaging = false
+    @State private var showRoster = false
 
     init(gameId: UUID) {
         self.gameId = gameId
@@ -154,6 +155,18 @@ struct GameView: View {
 
             Spacer()
 
+            Button {
+                showRoster = true
+            } label: {
+                Label("Players", systemImage: "person.3")
+                    .font(.appSecondaryBold)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, Spacing.xs)
+                    .background(Color.appPrimary)
+                    .cornerRadius(Spacing.xs)
+            }
+
             if !orderViewModel.orders.isEmpty {
                 Button {
                     showOrderReview = true
@@ -173,6 +186,16 @@ struct GameView: View {
         .background(.ultraThinMaterial)
         .sheet(isPresented: $showOrderReview) {
             OrderReviewView(viewModel: orderViewModel, palette: mapViewModel.palette)
+        }
+        .sheet(isPresented: $showRoster) {
+            if let game = mapViewModel.gameState?.game {
+                PlayerRosterView(
+                    players: game.players,
+                    units: mapViewModel.gameState?.units ?? [],
+                    myPower: game.players.first?.power ?? "",
+                    palette: mapViewModel.palette
+                )
+            }
         }
     }
 

@@ -2,15 +2,11 @@ import SwiftUI
 
 enum AppTab: String, CaseIterable {
     case games
-    case social
-    case learn
     case profile
 
     var title: String {
         switch self {
         case .games: return "Games"
-        case .social: return "Social"
-        case .learn: return "Learn"
         case .profile: return "Profile"
         }
     }
@@ -18,8 +14,6 @@ enum AppTab: String, CaseIterable {
     var iconName: String {
         switch self {
         case .games: return "flag.fill"
-        case .social: return "person.2"
-        case .learn: return "graduationcap"
         case .profile: return "person.circle"
         }
     }
@@ -38,24 +32,12 @@ struct AppTabView: View {
                 .tag(AppTab.games)
                 .badge(appState.gamesNeedingAttention)
 
-            SocialTab()
-                .tabItem {
-                    Label(AppTab.social.title, systemImage: AppTab.social.iconName)
-                }
-                .tag(AppTab.social)
-                .badge(appState.pendingFriendRequests)
-
-            LearnTab()
-                .tabItem {
-                    Label(AppTab.learn.title, systemImage: AppTab.learn.iconName)
-                }
-                .tag(AppTab.learn)
-
             ProfileTab()
                 .tabItem {
                     Label(AppTab.profile.title, systemImage: AppTab.profile.iconName)
                 }
                 .tag(AppTab.profile)
+                .badge(appState.pendingFriendRequests)
         }
         .onChange(of: appState.deepLinkTab) { newTab in
             if let tab = newTab {

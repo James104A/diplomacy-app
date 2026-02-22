@@ -31,7 +31,7 @@ enum DeepLinkRouter {
 
         case "profile":
             if let playerIdStr = pathComponents.first, let playerId = UUID(uuidString: playerIdStr) {
-                appState.deepLinkTab = .social
+                appState.deepLinkTab = .profile
                 appState.deepLinkDestination = .playerProfile(playerId)
                 appState.deepLinkPlayerId = playerId
             }

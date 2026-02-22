@@ -146,30 +146,59 @@ struct MapView: View {
     }
 
     private func drawUnitsLayer(context: inout GraphicsContext, mapW: CGFloat, mapH: CGFloat) {
-        let unitRadius: CGFloat = 5
-        let fontSize: CGFloat = 6
-        let scSize: CGFloat = 3
-        let scOffsetY: CGFloat = 7
+        // Sizes are in map-pixel space. Dividing by √scale makes them grow
+        // with zoom, but more slowly than the map — larger when zoomed in.
+        let s = viewModel.scale
+        let d = sqrt(s)  // damped scale factor
+        let unitRadius: CGFloat = 8 / d
+        let fontSize: CGFloat = 9 / d
+        let markerSize: CGFloat = 5.0 / d
+        let markerOffsetY: CGFloat = 4 / d
 
-        // Supply center dots
+        // Supply center markers — shown on all SC territories
         for territory in TerritoryData.all where territory.parentTerritory == nil && territory.isSupplyCenter {
+
             let c = CGPoint(x: territory.unitAnchor.x * mapW, y: territory.unitAnchor.y * mapH)
-            let r = CGRect(x: c.x - scSize/2, y: c.y + scOffsetY, width: scSize, height: scSize)
-            context.fill(Path(ellipseIn: r), with: .color(.white))
-            context.stroke(Path(ellipseIn: r), with: .color(.black.opacity(0.5)), lineWidth: 0.75)
+            let markerCenter = CGPoint(x: c.x, y: c.y + markerOffsetY)
+            let ownerPower = viewModel.ownerPower(for: territory.id)
+
+            if let owner = ownerPower {
+                // Owned SC: filled circle in the owning power's color, white border
+                let fillColor = owner.color(palette: viewModel.palette)
+                let r = CGRect(
+                    x: markerCenter.x - markerSize / 2,
+                    y: markerCenter.y - markerSize / 2,
+                    width: markerSize,
+                    height: markerSize
+                )
+                context.fill(Path(ellipseIn: r.insetBy(dx: -0.75 / s, dy: -0.75 / s)),
+                             with: .color(.black.opacity(0.25)))
+                context.fill(Path(ellipseIn: r), with: .color(fillColor))
+                context.stroke(Path(ellipseIn: r), with: .color(.white), lineWidth: 1.0 / s)
+            } else {
+                // Neutral SC: hollow circle, white fill with dark border
+                let r = CGRect(
+                    x: markerCenter.x - markerSize / 2,
+                    y: markerCenter.y - markerSize / 2,
+                    width: markerSize,
+                    height: markerSize
+                )
+                context.fill(Path(ellipseIn: r), with: .color(.white.opacity(0.85)))
+                context.stroke(Path(ellipseIn: r), with: .color(.black.opacity(0.6)), lineWidth: 1.0 / s)
+            }
         }
 
         // Unit icons
         for territory in TerritoryData.all where territory.parentTerritory == nil {
             guard let unit = viewModel.unitOn(territory.id) else { continue }
-            let c = CGPoint(x: territory.unitAnchor.x * mapW, y: territory.unitAnchor.y * mapH + 2)
+            let c = CGPoint(x: territory.unitAnchor.x * mapW, y: territory.unitAnchor.y * mapH + 2 / d)
             let powerColor = unit.powerEnum?.color(palette: viewModel.palette) ?? .gray
             let r = CGRect(x: c.x - unitRadius, y: c.y - unitRadius,
                            width: unitRadius * 2, height: unitRadius * 2)
 
-            context.stroke(Path(ellipseIn: r), with: .color(.black.opacity(0.3)), lineWidth: 1.5)
+            context.stroke(Path(ellipseIn: r), with: .color(.black.opacity(0.3)), lineWidth: 1.5 / s)
             context.fill(Path(ellipseIn: r), with: .color(powerColor))
-            context.stroke(Path(ellipseIn: r), with: .color(.white), lineWidth: 0.75)
+            context.stroke(Path(ellipseIn: r), with: .color(.white), lineWidth: 0.75 / s)
 
             let label = Text(unit.isArmy ? "A" : "F")
                 .font(.system(size: fontSize, weight: .black))
@@ -179,13 +208,28 @@ struct MapView: View {
     }
 
     private func drawLabelLayer(context: inout GraphicsContext, mapW: CGFloat, mapH: CGFloat) {
+        let d = sqrt(viewModel.scale)  // damped scale factor
+        let labelFontSize: CGFloat = 7 / d
+        let labelOffsetY: CGFloat = 8 / d
+
         for territory in TerritoryData.all where territory.parentTerritory == nil {
             let c = CGPoint(x: territory.labelAnchor.x * mapW,
-                            y: territory.labelAnchor.y * mapH - 8)
-            let label = Text(territory.abbreviation)
-                .font(.system(size: 5, weight: .bold))
-                .foregroundColor(.white)
-            context.draw(context.resolve(label), at: c, anchor: .center)
+                            y: territory.labelAnchor.y * mapH - labelOffsetY)
+
+            let resolvedLabel = context.resolve(
+                Text(territory.abbreviation)
+                    .font(.system(size: labelFontSize, weight: .bold))
+                    .foregroundColor(.white)
+            )
+            let shadowLabel = context.resolve(
+                Text(territory.abbreviation)
+                    .font(.system(size: labelFontSize, weight: .bold))
+                    .foregroundColor(.black.opacity(0.5))
+            )
+            // Shadow pass (offset slightly)
+            context.draw(shadowLabel, at: CGPoint(x: c.x + 0.5 / d, y: c.y + 0.5 / d), anchor: .center)
+            // Main pass
+            context.draw(resolvedLabel, at: c, anchor: .center)
         }
     }
 

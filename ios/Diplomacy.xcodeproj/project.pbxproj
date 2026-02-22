@@ -35,8 +35,6 @@
 		F44BFDA42F4265EE00FC2F39 /* MapModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDA32F4265EE00FC2F39 /* MapModels.swift */; };
 		F44BFDA62F4265EE00FC2F39 /* MessagingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDA52F4265EE00FC2F39 /* MessagingModels.swift */; };
 		F44BFDA82F4265EE00FC2F39 /* TerritoryData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDA72F4265EE00FC2F39 /* TerritoryData.swift */; };
-		F44BFDE42F4265EE00FC2F39 /* TerritoryHitTester.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDE52F4265EE00FC2F39 /* TerritoryHitTester.swift */; };
-		F44BFDE62F4265EE00FC2F39 /* territories.json in Resources */ = {isa = PBXBuildFile; fileRef = F44BFDE72F4265EE00FC2F39 /* territories.json */; };
 		F44BFDAA2F4265EE00FC2F39 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDA92F4265EE00FC2F39 /* AuthService.swift */; };
 		F44BFDAC2F4265EE00FC2F39 /* GameService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDAB2F4265EE00FC2F39 /* GameService.swift */; };
 		F44BFDAE2F4265EE00FC2F39 /* MessagingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDAD2F4265EE00FC2F39 /* MessagingService.swift */; };
@@ -64,6 +62,8 @@
 		F44BFDDA2F4265EE00FC2F39 /* ConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDD92F4265EE00FC2F39 /* ConversationView.swift */; };
 		F44BFDDC2F4265EE00FC2F39 /* RulesReferenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDDB2F4265EE00FC2F39 /* RulesReferenceView.swift */; };
 		F44BFDE12F4265EE00FC2F39 /* ComparableExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDE22F4265EE00FC2F39 /* ComparableExtensions.swift */; };
+		F44BFDE42F4265EE00FC2F39 /* TerritoryHitTester.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDE52F4265EE00FC2F39 /* TerritoryHitTester.swift */; };
+		F44BFDE62F4265EE00FC2F39 /* territories.json in Resources */ = {isa = PBXBuildFile; fileRef = F44BFDE72F4265EE00FC2F39 /* territories.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -96,8 +96,6 @@
 		F44BFDA32F4265EE00FC2F39 /* MapModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapModels.swift; sourceTree = "<group>"; };
 		F44BFDA52F4265EE00FC2F39 /* MessagingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagingModels.swift; sourceTree = "<group>"; };
 		F44BFDA72F4265EE00FC2F39 /* TerritoryData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerritoryData.swift; sourceTree = "<group>"; };
-		F44BFDE52F4265EE00FC2F39 /* TerritoryHitTester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerritoryHitTester.swift; sourceTree = "<group>"; };
-		F44BFDE72F4265EE00FC2F39 /* territories.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = territories.json; sourceTree = "<group>"; };
 		F44BFDA92F4265EE00FC2F39 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		F44BFDAB2F4265EE00FC2F39 /* GameService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameService.swift; sourceTree = "<group>"; };
 		F44BFDAD2F4265EE00FC2F39 /* MessagingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagingService.swift; sourceTree = "<group>"; };
@@ -125,6 +123,8 @@
 		F44BFDD92F4265EE00FC2F39 /* ConversationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationView.swift; sourceTree = "<group>"; };
 		F44BFDDB2F4265EE00FC2F39 /* RulesReferenceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulesReferenceView.swift; sourceTree = "<group>"; };
 		F44BFDE22F4265EE00FC2F39 /* ComparableExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComparableExtensions.swift; sourceTree = "<group>"; };
+		F44BFDE52F4265EE00FC2F39 /* TerritoryHitTester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerritoryHitTester.swift; sourceTree = "<group>"; };
+		F44BFDE72F4265EE00FC2F39 /* territories.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = territories.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -180,14 +180,6 @@
 				A1B2C3D400000014 /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
-			sourceTree = "<group>";
-		};
-		F44BFDE32F4265EE00FC2F39 /* Diplomacy/Extensions */ = {
-			isa = PBXGroup;
-			children = (
-				F44BFDE22F4265EE00FC2F39 /* ComparableExtensions.swift */,
-			);
-			path = Diplomacy/Extensions;
 			sourceTree = "<group>";
 		};
 		F44BFD6E2F4265EE00FC2F39 /* Diplomacy/Components */ = {
@@ -301,22 +293,6 @@
 			path = Diplomacy/Models;
 			sourceTree = "<group>";
 		};
-		F44BFDE82F4265EE00FC2F39 /* Diplomacy/Services */ = {
-			isa = PBXGroup;
-			children = (
-				F44BFDE52F4265EE00FC2F39 /* TerritoryHitTester.swift */,
-			);
-			path = Diplomacy/Services;
-			sourceTree = "<group>";
-		};
-		F44BFDE92F4265EE00FC2F39 /* Diplomacy/Resources */ = {
-			isa = PBXGroup;
-			children = (
-				F44BFDE72F4265EE00FC2F39 /* territories.json */,
-			);
-			path = Diplomacy/Resources;
-			sourceTree = "<group>";
-		};
 		F44BFDDE2F4265EE00FC2F39 /* Auth */ = {
 			isa = PBXGroup;
 			children = (
@@ -352,6 +328,30 @@
 				F44BFDD72F4265EE00FC2F39 /* MessagingHubView.swift */,
 			);
 			path = Messaging;
+			sourceTree = "<group>";
+		};
+		F44BFDE32F4265EE00FC2F39 /* Diplomacy/Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				F44BFDE22F4265EE00FC2F39 /* ComparableExtensions.swift */,
+			);
+			path = Diplomacy/Extensions;
+			sourceTree = "<group>";
+		};
+		F44BFDE82F4265EE00FC2F39 /* Diplomacy/Services */ = {
+			isa = PBXGroup;
+			children = (
+				F44BFDE52F4265EE00FC2F39 /* TerritoryHitTester.swift */,
+			);
+			path = Diplomacy/Services;
+			sourceTree = "<group>";
+		};
+		F44BFDE92F4265EE00FC2F39 /* Diplomacy/Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F44BFDE72F4265EE00FC2F39 /* territories.json */,
+			);
+			path = Diplomacy/Resources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -620,7 +620,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -652,7 +652,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

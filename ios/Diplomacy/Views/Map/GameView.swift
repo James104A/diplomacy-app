@@ -119,7 +119,7 @@ struct GameView: View {
                         palette: mapViewModel.palette
                     )
                     .scaleEffect(mapViewModel.scale, anchor: .topLeading)
-                    .offset(mapViewModel.offset)
+                    .offset(x: mapViewModel.pan.x, y: mapViewModel.pan.y)
                     .allowsHitTesting(false)
                 }
             }

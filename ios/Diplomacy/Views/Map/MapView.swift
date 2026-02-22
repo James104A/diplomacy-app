@@ -7,7 +7,12 @@ struct MapView: View {
     var onTap: ((CGPoint) -> Void)?
     var onLongPress: ((CGPoint) -> Void)?
 
-    @GestureState private var gestureScale: CGFloat = 1.0
+    // Pinch state — written directly by MagnifyGesture callbacks
+    @State private var pinchStartScale: CGFloat = 1.0
+    @State private var pinchStartOffset: CGSize = .zero
+    @State private var isPinching: Bool = false
+
+    // Pan state — GestureState resets automatically on gesture end
     @GestureState private var gestureDrag: CGSize = .zero
 
     var body: some View {
@@ -15,23 +20,42 @@ struct MapView: View {
             let mapSize = geometry.size
 
             ZStack {
-                mapLayers(mapSize: mapSize)
-                    .scaleEffect(viewModel.scale * gestureScale, anchor: .topLeading)
-                    .offset(
-                        x: viewModel.offset.width + gestureDrag.width,
-                        y: viewModel.offset.height + gestureDrag.height
-                    )
+                // Map content with transforms
+                ZStack {
+                    mapLayers(mapSize: mapSize)
+                        .scaleEffect(viewModel.scale, anchor: .topLeading)
+                        .offset(
+                            x: viewModel.offset.width + gestureDrag.width,
+                            y: viewModel.offset.height + gestureDrag.height
+                        )
+                }
+                .frame(width: mapSize.width, height: mapSize.height)
+                .contentShape(Rectangle())
+                .onTapGesture(count: 2) {
+                    viewModel.handleDoubleTap(in: viewModel.screenSize)
+                }
+                .simultaneousGesture(
+                    SpatialTapGesture()
+                        .onEnded { value in
+                            let normalized = screenToMap(value.location, in: mapSize)
+                            onTap?(normalized)
+                        }
+                )
+                .highPriorityGesture(longPressGesture(in: mapSize))
+                .simultaneousGesture(magnifyGesture(in: mapSize))
+                .simultaneousGesture(panGesture)
+
+                // Zoom controls (not affected by map transforms)
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        zoomControls
+                    }
+                }
+                .padding(.trailing, 12)
+                .padding(.bottom, 12)
             }
-            .contentShape(Rectangle())
-            .onTapGesture(count: 2) {
-                viewModel.handleDoubleTap(in: viewModel.screenSize)
-            }
-            .onTapGesture { location in
-                let normalized = screenToMap(location, in: mapSize)
-                onTap?(normalized)
-            }
-            .gesture(longPressGesture(in: mapSize))
-            .simultaneousGesture(pinchAndPanGesture)
             .onAppear {
                 viewModel.screenSize = geometry.size
                 viewModel.trySetInitialPosition()
@@ -42,6 +66,49 @@ struct MapView: View {
         }
         .background(Color(hex: 0xB3D9FF))
         .clipped()
+    }
+
+    // MARK: - Zoom Controls
+
+    /// Zoom keeping screen center fixed: newOffset = offset * r + center * (1 - r)
+    private func zoomAround(factor: CGFloat) {
+        let oldScale = viewModel.scale
+        let newScale = (oldScale * factor).clamped(to: 1.0...5.0)
+        let r = newScale / oldScale
+        let center = CGPoint(
+            x: viewModel.screenSize.width / 2,
+            y: viewModel.screenSize.height / 2
+        )
+        let proposedOffset = CGSize(
+            width:  viewModel.offset.width  * r + (1 - r) * center.x,
+            height: viewModel.offset.height * r + (1 - r) * center.y
+        )
+        withAnimation(.easeOut(duration: 0.2)) {
+            viewModel.scale = newScale
+            viewModel.offset = viewModel.clampOffset(
+                proposedOffset, scale: newScale, screenSize: viewModel.screenSize
+            )
+        }
+    }
+
+    private var zoomControls: some View {
+        VStack(spacing: 4) {
+            Button { zoomAround(factor: 1.5) } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 16, weight: .bold))
+                    .frame(width: 36, height: 36)
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+
+            Button { zoomAround(factor: 1.0 / 1.5) } label: {
+                Image(systemName: "minus")
+                    .font(.system(size: 16, weight: .bold))
+                    .frame(width: 36, height: 36)
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
     }
 
     // MARK: - Map Layers
@@ -86,7 +153,7 @@ struct MapView: View {
     /// To invert: subtract offset first, then divide by scale.
     private func screenToMap(_ screenPoint: CGPoint, in viewSize: CGSize) -> CGPoint {
         let mapHeight = viewSize.width / Self.mapAspect
-        let currentScale = viewModel.scale * gestureScale
+        let currentScale = viewModel.scale
         let currentOffset = CGSize(
             width: viewModel.offset.width + gestureDrag.width,
             height: viewModel.offset.height + gestureDrag.height
@@ -102,37 +169,62 @@ struct MapView: View {
 
     // MARK: - Gestures
 
-    /// Combined pinch + drag gesture. Using `.simultaneously(with:)` ensures
-    /// a two-finger pinch is not misinterpreted as a one-finger pan.
-    private var pinchAndPanGesture: some Gesture {
-        MagnificationGesture()
-            .updating($gestureScale) { value, state, _ in
-                state = value
+    /// Anchored pinch-to-zoom using iOS 17+ MagnifyGesture.
+    /// The pinch center stays fixed under the user's fingers.
+    private func magnifyGesture(in mapSize: CGSize) -> some Gesture {
+        MagnifyGesture()
+            .onChanged { value in
+                if !isPinching {
+                    pinchStartScale = viewModel.scale
+                    pinchStartOffset = viewModel.offset
+                    isPinching = true
+                }
+
+                let targetScale = (pinchStartScale * value.magnification).clamped(to: 1.0...5.0)
+
+                // Convert the gesture's startAnchor (UnitPoint 0-1) to a screen point
+                let anchorPt = CGPoint(
+                    x: value.startAnchor.x * mapSize.width,
+                    y: value.startAnchor.y * mapSize.height
+                )
+
+                // Adjust offset so the anchor stays stationary as scale changes
+                let r = targetScale / pinchStartScale
+                let proposedOffset = CGSize(
+                    width:  r * pinchStartOffset.width  + (1 - r) * anchorPt.x,
+                    height: r * pinchStartOffset.height + (1 - r) * anchorPt.y
+                )
+
+                viewModel.scale = targetScale
+                viewModel.offset = viewModel.clampOffset(
+                    proposedOffset, scale: targetScale, screenSize: viewModel.screenSize
+                )
+            }
+            .onEnded { _ in
+                isPinching = false
+                viewModel.offset = viewModel.clampOffset(
+                    viewModel.offset, scale: viewModel.scale, screenSize: viewModel.screenSize
+                )
+            }
+    }
+
+    /// Pan gesture — free movement during drag, clamp + animate on release.
+    private var panGesture: some Gesture {
+        DragGesture()
+            .updating($gestureDrag) { value, state, _ in
+                state = value.translation
             }
             .onEnded { value in
-                let newScale = (viewModel.scale * value).clamped(to: 1.0...5.0)
+                let proposed = CGSize(
+                    width: viewModel.offset.width + value.translation.width,
+                    height: viewModel.offset.height + value.translation.height
+                )
                 withAnimation(.easeOut(duration: 0.15)) {
-                    viewModel.scale = newScale
                     viewModel.offset = viewModel.clampOffset(
-                        viewModel.offset, scale: newScale, screenSize: viewModel.screenSize
+                        proposed, scale: viewModel.scale, screenSize: viewModel.screenSize
                     )
                 }
             }
-            .simultaneously(with:
-                DragGesture()
-                    .updating($gestureDrag) { value, state, _ in
-                        state = value.translation
-                    }
-                    .onEnded { value in
-                        let proposed = CGSize(
-                            width: viewModel.offset.width + value.translation.width,
-                            height: viewModel.offset.height + value.translation.height
-                        )
-                        viewModel.offset = viewModel.clampOffset(
-                            proposed, scale: viewModel.scale, screenSize: viewModel.screenSize
-                        )
-                    }
-            )
     }
 
     private func longPressGesture(in viewSize: CGSize) -> some Gesture {

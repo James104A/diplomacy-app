@@ -118,9 +118,7 @@ struct GameView: View {
                         mapSize: mapCanvasSize,
                         palette: mapViewModel.palette
                     )
-                    // Center the overlay in the full view, matching MapView's ZStack centering
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .scaleEffect(mapViewModel.scale)
+                    .scaleEffect(mapViewModel.scale, anchor: .topLeading)
                     .offset(mapViewModel.offset)
                     .allowsHitTesting(false)
                 }

@@ -40,7 +40,7 @@ class GameService(
     // ================================================================
 
     fun createGame(request: CreateGameRequest, creatorId: UUID): Mono<GameResponse> {
-        val phaseLength = Duration.parse(request.phaseLength)
+        val phaseLength = Duration.parse(request.phaseLength).toSeconds()
         val inviteCode = if (request.visibility == "PRIVATE") generateInviteCode() else null
 
         val game = Game(
@@ -59,7 +59,16 @@ class GameService(
         )
 
         return gameRepository.save(game)
-            .map { saved -> saved.toResponse() }
+            .flatMap { saved ->
+                val gamePlayer = GamePlayer(
+                    gameId = saved.id!!,
+                    playerId = creatorId,
+                    power = POWERS.first()
+                )
+                gamePlayerRepository.save(gamePlayer)
+                    .then(gameRepository.save(saved.copy(playerCount = 1)))
+                    .map { it.toResponse() }
+            }
     }
 
     // ================================================================
@@ -133,7 +142,7 @@ class GameService(
             currentPhase = "ORDER_SUBMISSION",
             currentSeason = "SPRING",
             currentYear = 1901,
-            phaseDeadline = now.plus(game.phaseLength),
+            phaseDeadline = now.plusSeconds(game.phaseLength),
             startedAt = now,
             playerCount = 7
         )
@@ -214,9 +223,9 @@ class GameService(
                         )
                     } else emptyMap()
 
-                    val dislodgedUnits = state.dislodgedUnits?.let {
-                        objectMapper.readValue(
-                            it,
+                    val dislodgedUnits: List<DislodgedUnitDto>? = state.dislodgedUnits?.let { json: String ->
+                        objectMapper.readValue<List<DislodgedUnitDto>>(
+                            json,
                             objectMapper.typeFactory.constructCollectionType(List::class.java, DislodgedUnitDto::class.java)
                         )
                     }

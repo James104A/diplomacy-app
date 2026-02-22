@@ -127,6 +127,7 @@
 		F44BFDE52F4265EE00FC2F39 /* TerritoryHitTester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerritoryHitTester.swift; sourceTree = "<group>"; };
 		F44BFDE72F4265EE00FC2F39 /* territories.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = territories.json; sourceTree = "<group>"; };
 		F44BFDE82F42660000FC2F39 /* PlayerRosterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerRosterView.swift; sourceTree = "<group>"; };
+		F44BFDEA2F4266FF00FC2F39 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -163,6 +164,7 @@
 				A1B2C3D400000011 /* DiplomacyApp.swift */,
 				A1B2C3D400000012 /* ContentView.swift */,
 				A1B2C3D400000013 /* Assets.xcassets */,
+				F44BFDEA2F4266FF00FC2F39 /* Info.plist */,
 				A1B2C3D400000033 /* Preview Content */,
 			);
 			path = Diplomacy;
@@ -619,6 +621,7 @@
 				DEVELOPMENT_TEAM = QA38BAD9RK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Diplomacy/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -651,6 +654,7 @@
 				DEVELOPMENT_TEAM = QA38BAD9RK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Diplomacy/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

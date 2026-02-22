@@ -100,7 +100,7 @@ class AdjudicationOrchestrator(
                                 currentPhase = nextPhase,
                                 currentSeason = nextSeason,
                                 currentYear = nextYear,
-                                phaseDeadline = Instant.now().plus(game.phaseLength),
+                                phaseDeadline = Instant.now().plusSeconds(game.phaseLength),
                                 allOrdersSubmitted = false
                             )
 

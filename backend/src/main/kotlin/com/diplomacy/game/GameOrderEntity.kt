@@ -9,14 +9,14 @@ import java.util.UUID
 @Table("orders")
 data class GameOrderEntity(
     @Id val id: UUID? = null,
-    val gameId: UUID,
-    val playerId: UUID,
-    val power: String,
-    val phase: String,
-    val season: String,
-    val year: Int,
+    @Column("game_id") val gameId: UUID,
+    @Column("player_id") val playerId: UUID,
+    @Column("power") val power: String,
+    @Column("phase") val phase: String,
+    @Column("season") val season: String,
+    @Column("year") val year: Int,
     @Column("orders") val orders: String, // JSONB stored as String
-    val isDefault: Boolean = false,
+    @Column("is_default") val isDefault: Boolean = false,
     @Column("validation_results") val validationResults: String? = null,
-    val submittedAt: Instant = Instant.now()
+    @Column("submitted_at") val submittedAt: Instant = Instant.now()
 )

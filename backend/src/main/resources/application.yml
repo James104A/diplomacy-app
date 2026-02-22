@@ -26,6 +26,11 @@ management:
     health:
       show-details: always
 
+logging:
+  level:
+    org.springframework.r2dbc: DEBUG
+    io.r2dbc.postgresql: DEBUG
+
 server:
   port: ${SERVER_PORT:8080}
 

@@ -67,7 +67,7 @@ actor APIClient {
     private var isRefreshing = false
     private var pendingRequests: [CheckedContinuation<Data, Error>] = []
 
-    init(baseURL: String = "https://api.diplomacy.app/v1") {
+    init(baseURL: String = "http://localhost:8080/v1") {
         self.baseURL = baseURL
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30

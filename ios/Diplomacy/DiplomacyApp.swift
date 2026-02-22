@@ -8,7 +8,7 @@ struct DiplomacyApp: App {
 
     init() {
         #if DEBUG
-        PreviewMode.isEnabled = true
+        // PreviewMode.isEnabled = true  // Disabled — using real backend
         print("[App] PreviewMode enabled: \(PreviewMode.isEnabled)")
         #endif
     }

@@ -2,6 +2,7 @@ package com.diplomacy.game
 
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 
@@ -156,7 +157,7 @@ fun Game.toResponse(players: List<GamePlayerSummary> = emptyList()) = GameRespon
     creatorId = creatorId,
     settings = GameSettings(
         map = mapId,
-        phaseLength = phaseLength.toString(),
+        phaseLength = Duration.ofSeconds(phaseLength).toString(),
         pressRules = pressRules,
         scoring = scoringSystem,
         minReliability = minReliability,

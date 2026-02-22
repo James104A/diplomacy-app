@@ -17,7 +17,8 @@ actor GameService {
 
     func getGame(id: UUID) async throws -> GameResponse {
         if PreviewMode.isEnabled { return MockData.gameState.game }
-        return try await client.get("/games/\(id)")
+        let state: GameStateResponse = try await client.get("/games/\(id)")
+        return state.game
     }
 
     func getGameByInviteCode(_ inviteCode: String) async throws -> GameResponse {

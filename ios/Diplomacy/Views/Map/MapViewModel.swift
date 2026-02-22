@@ -153,41 +153,36 @@ class MapViewModel: ObservableObject {
 
     /// Clamp offset so the map stays on screen.
     /// Assumes .scaleEffect(anchor: .topLeading).
+    ///
+    /// - containerSize: the GeometryReader size (stored as screenSize)
+    /// - mapBaseSize: the unscaled map content size (width = container width,
+    ///   height = container width / mapAspect)
     func clampOffset(_ proposed: CGSize, scale: CGFloat, screenSize: CGSize) -> CGSize {
-        let mapWidth  = screenSize.width
-        let mapHeight = screenSize.width / MapView.mapAspect
-        let scaledW   = mapWidth  * scale
-        let scaledH   = mapHeight * scale
+        let containerW = screenSize.width
+        let containerH = screenSize.height
+        let contentW   = containerW * scale
+        let contentH   = (containerW / MapView.mapAspect) * scale
 
-        let minX: CGFloat
-        let maxX: CGFloat
-        let minY: CGFloat
-        let maxY: CGFloat
+        let offsetX: CGFloat
+        let offsetY: CGFloat
 
-        if scaledW >= screenSize.width {
-            // Map wider than screen — scroll so all parts are reachable
-            minX = screenSize.width - scaledW
-            maxX = 0
+        if contentW <= containerW {
+            offsetX = (containerW - contentW) / 2
         } else {
-            // Map fits horizontally — allow sliding within screen bounds
-            minX = 0
-            maxX = screenSize.width - scaledW
+            let minX = containerW - contentW  // negative
+            let maxX: CGFloat = 0
+            offsetX = proposed.width.clamped(to: minX...maxX)
         }
 
-        if scaledH >= screenSize.height {
-            // Map taller than screen — scroll so all parts are reachable
-            minY = screenSize.height - scaledH
-            maxY = 0
+        if contentH <= containerH {
+            offsetY = (containerH - contentH) / 2
         } else {
-            // Map fits vertically — allow sliding within screen bounds
-            minY = 0
-            maxY = screenSize.height - scaledH
+            let minY = containerH - contentH  // negative
+            let maxY: CGFloat = 0
+            offsetY = proposed.height.clamped(to: minY...maxY)
         }
 
-        return CGSize(
-            width:  proposed.width.clamped(to:  minX...maxX),
-            height: proposed.height.clamped(to: minY...maxY)
-        )
+        return CGSize(width: offsetX, height: offsetY)
     }
 
     /// Toggle zoom on double-tap, centering on screen center.

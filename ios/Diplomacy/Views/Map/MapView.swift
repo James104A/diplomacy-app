@@ -12,8 +12,9 @@ struct MapView: View {
     @State private var pinchStartOffset: CGSize = .zero
     @State private var isPinching: Bool = false
 
-    // Pan state — GestureState resets automatically on gesture end
-    @GestureState private var gestureDrag: CGSize = .zero
+    // Pan state — written directly by DragGesture callbacks (like magnify)
+    @State private var dragStartOffset: CGSize = .zero
+    @State private var isDragging: Bool = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -24,10 +25,7 @@ struct MapView: View {
                 ZStack {
                     mapLayers(mapSize: mapSize)
                         .scaleEffect(viewModel.scale, anchor: .topLeading)
-                        .offset(
-                            x: viewModel.offset.width + gestureDrag.width,
-                            y: viewModel.offset.height + gestureDrag.height
-                        )
+                        .offset(viewModel.offset)
                 }
                 .frame(width: mapSize.width, height: mapSize.height)
                 .contentShape(Rectangle())
@@ -154,10 +152,7 @@ struct MapView: View {
     private func screenToMap(_ screenPoint: CGPoint, in viewSize: CGSize) -> CGPoint {
         let mapHeight = viewSize.width / Self.mapAspect
         let currentScale = viewModel.scale
-        let currentOffset = CGSize(
-            width: viewModel.offset.width + gestureDrag.width,
-            height: viewModel.offset.height + gestureDrag.height
-        )
+        let currentOffset = viewModel.offset
 
         // Invert the transform: point_in_map = (screen_point - offset) / scale
         let mapX = (screenPoint.x - currentOffset.width) / currentScale
@@ -208,16 +203,25 @@ struct MapView: View {
             }
     }
 
-    /// Pan gesture — free movement during drag, clamp + animate on release.
+    /// Pan gesture — writes directly to viewModel.offset in onChanged,
+    /// then clamps with animation on release.
     private var panGesture: some Gesture {
         DragGesture()
-            .updating($gestureDrag) { value, state, _ in
-                state = value.translation
+            .onChanged { value in
+                if !isDragging {
+                    dragStartOffset = viewModel.offset
+                    isDragging = true
+                }
+                viewModel.offset = CGSize(
+                    width: dragStartOffset.width + value.translation.width,
+                    height: dragStartOffset.height + value.translation.height
+                )
             }
             .onEnded { value in
+                isDragging = false
                 let proposed = CGSize(
-                    width: viewModel.offset.width + value.translation.width,
-                    height: viewModel.offset.height + value.translation.height
+                    width: dragStartOffset.width + value.translation.width,
+                    height: dragStartOffset.height + value.translation.height
                 )
                 withAnimation(.easeOut(duration: 0.15)) {
                     viewModel.offset = viewModel.clampOffset(

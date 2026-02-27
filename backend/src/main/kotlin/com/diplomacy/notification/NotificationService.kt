@@ -4,6 +4,7 @@ import com.diplomacy.game.GamePlayerRepository
 import com.diplomacy.messaging.GameWebSocketHandler
 import com.diplomacy.messaging.WebSocketEvent
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.r2dbc.postgresql.codec.Json
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
@@ -175,18 +176,18 @@ class NotificationService(
         }
     }
 
-    private fun parseGlobalPrefs(json: String): GlobalNotificationPrefs {
+    private fun parseGlobalPrefs(json: Json): GlobalNotificationPrefs {
         return try {
-            objectMapper.readValue(json, GlobalNotificationPrefs::class.java)
+            objectMapper.readValue(json.asString(), GlobalNotificationPrefs::class.java)
         } catch (e: Exception) {
             GlobalNotificationPrefs()
         }
     }
 
-    private fun parsePerGamePrefs(json: String): Map<String, GameNotificationPrefs> {
+    private fun parsePerGamePrefs(json: Json): Map<String, GameNotificationPrefs> {
         return try {
             objectMapper.readValue(
-                json,
+                json.asString(),
                 objectMapper.typeFactory.constructMapType(
                     Map::class.java,
                     String::class.java,
@@ -316,8 +317,8 @@ class NotificationService(
             .defaultIfEmpty(NotificationPreference(playerId = playerId))
             .flatMap { existing ->
                 val updated = existing.copy(
-                    globalPrefs = objectMapper.writeValueAsString(dto.global),
-                    perGamePrefs = objectMapper.writeValueAsString(dto.perGame),
+                    globalPrefs = Json.of(objectMapper.writeValueAsString(dto.global)),
+                    perGamePrefs = Json.of(objectMapper.writeValueAsString(dto.perGame)),
                     updatedAt = Instant.now()
                 )
                 prefsRepository.save(updated)

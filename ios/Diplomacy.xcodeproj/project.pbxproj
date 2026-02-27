@@ -65,6 +65,10 @@
 		F44BFDE42F4265EE00FC2F39 /* TerritoryHitTester.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDE52F4265EE00FC2F39 /* TerritoryHitTester.swift */; };
 		F44BFDE62F4265EE00FC2F39 /* territories.json in Resources */ = {isa = PBXBuildFile; fileRef = F44BFDE72F4265EE00FC2F39 /* territories.json */; };
 		F44BFDE92F42660000FC2F39 /* PlayerRosterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDE82F42660000FC2F39 /* PlayerRosterView.swift */; };
+		F44BFDEC2F42670000FC2F39 /* NotificationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDEB2F42670000FC2F39 /* NotificationModels.swift */; };
+		F44BFDEE2F42670000FC2F39 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDED2F42670000FC2F39 /* NotificationService.swift */; };
+		F44BFDF02F42670000FC2F39 /* NotificationSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDEF2F42670000FC2F39 /* NotificationSettingsViewModel.swift */; };
+		F44BFDF22F42670000FC2F39 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44BFDF12F42670000FC2F39 /* NotificationSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -128,6 +132,10 @@
 		F44BFDE72F4265EE00FC2F39 /* territories.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = territories.json; sourceTree = "<group>"; };
 		F44BFDE82F42660000FC2F39 /* PlayerRosterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerRosterView.swift; sourceTree = "<group>"; };
 		F44BFDEA2F4266FF00FC2F39 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F44BFDEB2F42670000FC2F39 /* NotificationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationModels.swift; sourceTree = "<group>"; };
+		F44BFDED2F42670000FC2F39 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		F44BFDEF2F42670000FC2F39 /* NotificationSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsViewModel.swift; sourceTree = "<group>"; };
+		F44BFDF12F42670000FC2F39 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -228,6 +236,7 @@
 				F44BFDAD2F4265EE00FC2F39 /* MessagingService.swift */,
 				F44BFD972F4265EE00FC2F39 /* MockData.swift */,
 				F44BFDAF2F4265EE00FC2F39 /* NetworkMonitor.swift */,
+				F44BFDED2F42670000FC2F39 /* NotificationService.swift */,
 				F44BFD952F4265EE00FC2F39 /* PreviewMode.swift */,
 				F44BFD792F4265EE00FC2F39 /* WebSocketManager.swift */,
 			);
@@ -258,6 +267,8 @@
 		F44BFD802F4265EE00FC2F39 /* Profile */ = {
 			isa = PBXGroup;
 			children = (
+				F44BFDF12F42670000FC2F39 /* NotificationSettingsView.swift */,
+				F44BFDEF2F42670000FC2F39 /* NotificationSettingsViewModel.swift */,
 				F44BFD7F2F4265EE00FC2F39 /* ProfileTab.swift */,
 			);
 			path = Profile;
@@ -292,6 +303,7 @@
 				F44BFDA12F4265EE00FC2F39 /* GameModels.swift */,
 				F44BFDA32F4265EE00FC2F39 /* MapModels.swift */,
 				F44BFDA52F4265EE00FC2F39 /* MessagingModels.swift */,
+				F44BFDEB2F42670000FC2F39 /* NotificationModels.swift */,
 				F44BFDA72F4265EE00FC2F39 /* TerritoryData.swift */,
 			);
 			path = Diplomacy/Models;
@@ -485,6 +497,10 @@
 				F44BFDDC2F4265EE00FC2F39 /* RulesReferenceView.swift in Sources */,
 				F44BFDE12F4265EE00FC2F39 /* ComparableExtensions.swift in Sources */,
 				F44BFDE92F42660000FC2F39 /* PlayerRosterView.swift in Sources */,
+				F44BFDEC2F42670000FC2F39 /* NotificationModels.swift in Sources */,
+				F44BFDEE2F42670000FC2F39 /* NotificationService.swift in Sources */,
+				F44BFDF02F42670000FC2F39 /* NotificationSettingsViewModel.swift in Sources */,
+				F44BFDF22F42670000FC2F39 /* NotificationSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

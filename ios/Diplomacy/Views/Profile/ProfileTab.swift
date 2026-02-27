@@ -24,6 +24,24 @@ struct ProfileTab: View {
                         }
                         .padding(.vertical, Spacing.xs)
                     }
+
+                    NavigationLink {
+                        NotificationSettingsView()
+                    } label: {
+                        Label {
+                            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                                Text("Notifications")
+                                    .font(.appTitle)
+                                Text("Message alerts, reminders, and digests")
+                                    .font(.appCaption)
+                                    .foregroundColor(.appSecondary)
+                            }
+                        } icon: {
+                            Image(systemName: "bell")
+                                .foregroundColor(.appPrimary)
+                        }
+                        .padding(.vertical, Spacing.xs)
+                    }
                 }
 
                 Section("Social") {

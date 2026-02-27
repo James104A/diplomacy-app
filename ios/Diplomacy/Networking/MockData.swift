@@ -201,6 +201,18 @@ enum MockData {
         ]
     )
 
+    // MARK: - Notification Preferences
+
+    static let notificationPreferences = NotificationPreferences(
+        global: GlobalNotificationPrefs(
+            newMessage: true,
+            phaseResolved: "IMMEDIATE",
+            deadlineReminder: "PT2H",
+            ordersReminder: "PT4H"
+        ),
+        perGame: [:]
+    )
+
     // MARK: - Conversations
 
     static func conversations(gameId: UUID) -> [ConversationSummary] {

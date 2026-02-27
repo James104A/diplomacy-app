@@ -56,10 +56,11 @@ class ClassicMapTest {
     }
 
     @Test
-    fun `each power has exactly 3 home supply centers`() {
+    fun `each power has exactly 3 home supply centers except Russia with 4`() {
         for (power in Power.entries) {
+            val expected = if (power == Power.RUSSIA) 4 else 3
             val count = map.territories.values.count { it.homeCenter == power }
-            assertEquals(3, count, "$power should have 3 home SCs but has $count")
+            assertEquals(expected, count, "$power should have $expected home SCs but has $count")
         }
     }
 

@@ -65,6 +65,18 @@ internal class ResolutionContext(
         // Any remaining unresolved moves are part of cycles — resolve as successful rotations
         resolveCircularMoves()
 
+        // Re-resolve after circular moves (e.g., outside moves competing with cycle members)
+        changed = true
+        while (changed) {
+            changed = false
+            for ((_, state) in states) {
+                if (state.resolved) continue
+                if (tryResolve(state)) {
+                    changed = true
+                }
+            }
+        }
+
         // Any still unresolved (shouldn't happen) default to failed
         for ((_, state) in states) {
             if (!state.resolved) {
@@ -105,9 +117,42 @@ internal class ResolutionContext(
     // MOVE RESOLUTION
     // ================================================================
 
+    /**
+     * Returns the effective (parent) territory ID for multi-coast handling.
+     * e.g., SPA_SC -> SPA, BUL_EC -> BUL, STP_NC -> STP.
+     * Non-coast territories return themselves.
+     */
+    private fun effectiveTerritory(territoryId: String): String {
+        return mapDefinition.territories[territoryId]?.parentTerritory ?: territoryId
+    }
+
+    /**
+     * Returns all competing moves targeting the same physical territory as [destination],
+     * excluding the move from [excludeTerritory].
+     * Handles multi-coast: moves to SPA, SPA_NC, SPA_SC all compete.
+     */
+    private fun competingMovesTo(destination: String, excludeTerritory: String): List<Order.Move> {
+        val effDest = effectiveTerritory(destination)
+        return movesTo.entries
+            .filter { (dest, _) -> effectiveTerritory(dest) == effDest }
+            .flatMap { (_, moves) -> moves }
+            .filter { it.unitTerritory != excludeTerritory }
+    }
+
     private fun resolveMove(state: OrderState): Boolean {
         val move = state.order as Order.Move
         val destination = move.destination
+
+        // Adjacency validation (skip for convoy moves — army travels via sea)
+        if (!move.viaConvoy) {
+            val unitType = gameState.units.find { it.territoryId == move.unitTerritory }?.type ?: UnitType.ARMY
+            if (!mapDefinition.isAdjacent(move.unitTerritory, move.destination, unitType)) {
+                state.outcome = OrderOutcome.BOUNCED
+                state.resolved = true
+                state.reason = "Not adjacent"
+                return true
+            }
+        }
 
         // For convoy moves, check if convoy chain exists
         if (move.viaConvoy) {
@@ -150,8 +195,8 @@ internal class ResolutionContext(
             return resolveHeadToHead(state, move, headToHead)
         }
 
-        // Check competing moves to same destination
-        val competingMoves = movesTo[destination]?.filter { it.unitTerritory != move.unitTerritory } ?: emptyList()
+        // Check competing moves to same destination (including multi-coast variants)
+        val competingMoves = competingMovesTo(destination, move.unitTerritory)
 
         // Get defense strength of destination
         val defenseStrength = calculateDefenseStrength(destination, move)
@@ -193,9 +238,14 @@ internal class ResolutionContext(
             if (defenderOrder != null) {
                 val defenderState = states[destination]!!
                 if (defenderOrder !is Order.Move || !defenderState.resolved || defenderState.outcome != OrderOutcome.SUCCEEDED) {
-                    defenderState.outcome = OrderOutcome.DISLODGED
+                    if (defenderOrder is Order.Convoy) {
+                        defenderState.outcome = OrderOutcome.DISRUPTED
+                        defenderState.reason = "Convoy disrupted: fleet dislodged by ${move.power} from ${move.unitTerritory}"
+                    } else {
+                        defenderState.outcome = OrderOutcome.DISLODGED
+                        defenderState.reason = "Dislodged by ${move.power} from ${move.unitTerritory}"
+                    }
                     defenderState.resolved = true
-                    defenderState.reason = "Dislodged by ${move.power} from ${move.unitTerritory}"
                 }
             }
 
@@ -519,8 +569,8 @@ internal class ResolutionContext(
                         newUnits.add(unit)
                     }
                 }
-                OrderOutcome.DISLODGED -> {
-                    // Find who dislodged this unit
+                OrderOutcome.DISLODGED, OrderOutcome.DISRUPTED -> {
+                    // Find who dislodged/disrupted this unit
                     val attacker = states.values.find {
                         it.order is Order.Move &&
                             (it.order as Order.Move).destination == unit.territoryId &&

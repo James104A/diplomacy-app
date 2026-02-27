@@ -260,6 +260,7 @@ object ClassicMap {
         raw += Triple("GRE", "BUL_SC", F)
         raw += Triple("GRE", "ION", F)
         raw += Triple("GRE", "AEG", F)
+        raw += Triple("AEG", "BUL_SC", F)
         raw += Triple("HOL", "HEL", F)
         raw += Triple("HOL", "NTH", F)
         raw += Triple("KIE", "HOL", AF)

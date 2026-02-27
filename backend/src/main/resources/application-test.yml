@@ -1,10 +1,10 @@
 spring:
   r2dbc:
-    url: r2dbc:postgresql://localhost:5432/diplomacy_test
-    username: diplomacy
-    password: diplomacy
+    url: r2dbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:diplomacy_test}
+    username: ${DB_USER:diplomacy}
+    password: ${DB_PASSWORD:diplomacy}
 
   flyway:
-    url: jdbc:postgresql://localhost:5432/diplomacy_test
-    user: diplomacy
-    password: diplomacy
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:diplomacy_test}
+    user: ${DB_USER:diplomacy}
+    password: ${DB_PASSWORD:diplomacy}
